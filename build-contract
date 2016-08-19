@@ -1,0 +1,12 @@
+#!/bin/bash
+
+echo "In $(pwd) at $(date -Iseconds) on $(hostname)"
+
+[ -f Dockerfile ] || {
+  echo "This can't be a build-contract compatible project, can it? There's no Dockerfile."
+  exit 1
+}
+
+ls -l
+echo "The actual contract is still to be defined"
+sleep 10
