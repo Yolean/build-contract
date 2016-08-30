@@ -1,4 +1,9 @@
 #!/bin/bash
+if [[ ! -z $DEBUG ]]; then
+  set -e
+fi
+
+ROOT=$PWD
 
 echo "In $(pwd) at $(date -Iseconds) on $(hostname)"
 
@@ -7,6 +12,33 @@ echo "In $(pwd) at $(date -Iseconds) on $(hostname)"
   exit 1
 }
 
-ls -l
-echo "The actual contract is still to be defined"
-sleep 10
+function die_on_failure {
+  # Count the number of failed containers
+  # NOTE: Assumes no other build contract process is running at the same time
+  test_containers=$(docker ps -aq --filter label=com.yolean.build-contract)
+  n_failures=$(docker inspect -f "{{.State.ExitCode}}" $test_containers | grep -v 0 | wc -l)
+
+  if [[ $n_failures -gt 0 ]]; then
+    # Die :)
+    docker-compose kill
+    docker-compose rm -f
+    echo "ERROR: Build Contract failed, please see logs above for details"
+    exit 1
+  fi
+
+  sleep 3
+  die_on_failure
+}
+
+for test in "$ROOT/build-contracts/"; do
+  cd "$ROOT/$test"
+
+  docker-compose up --build --force-recreate -d
+  die_on_failure & docker-compose logs -f
+
+  cd "$ROOT"
+done
+
+image_id=docker build $ROOT
+image_name=localhost:5000/NAME_VERSION # TODO
+docker tag image_id $image_name
