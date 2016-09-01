@@ -1,12 +1,54 @@
 #!/bin/bash
+set -e
+trap "exit" INT
 
-echo "In $(pwd) at $(date -Iseconds) on $(hostname)"
+ROOT=$PWD
+
+# echo "In $(pwd) at $(date -Iseconds) on $(hostname)"
 
 [ -f Dockerfile ] || {
   echo "This can't be a build-contract compatible project, can it? There's no Dockerfile."
   exit 1
 }
 
-ls -l
-echo "The actual contract is still to be defined"
-sleep 10
+function wait_for_contract {
+  # Count the number of failed containers
+  # NOTE: Assumes no other build contract process is running at the same time
+  test_containers=$(docker ps -aq --filter label=com.yolean.build-contract)
+  n_running_test_containers=$(docker ps -q --filter label=com.yolean.build-contract | wc -l)
+  n_failures=$(docker inspect -f "{{.State.ExitCode}}" $test_containers | grep -v 0 | wc -l)
+
+  if [[ $n_failures -gt 0 ]]; then
+    # Build Contract Failed
+    echo 1
+  elif [[ $n_running_test_containers -eq 0 ]]; then
+    # Build Contract Succeeded
+    echo 0
+  else
+    # We're not done yet
+    sleep 3
+    wait_for_contract
+  fi
+}
+
+cd $ROOT/build-contracts/
+for compose_file in $(ls | grep .yml); do
+  docker-compose -f "$compose_file" up --build --force-recreate -d
+  docker-compose logs -f &
+  bar=$(wait_for_contract)
+  echo "Build Contract finished with $bar"
+  docker-compose kill
+  docker-compose rm -f
+  if [[ $bar -ne 0 ]]; then
+    echo "ERROR: Build Contract failed, please see logs above for details"
+    echo "ERROR: Aborting build!"
+    exit $bar
+  fi
+done
+
+echo "Build Contract finished. Building image and pushing to registry!"
+
+# image_id=docker build $ROOT
+# image_name=localhost:5000/NAME_VERSION # TODO
+# docker tag image_id $image_name
+# docker push image_id
