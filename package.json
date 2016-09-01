@@ -1,0 +1,19 @@
+{
+  "name": "build-contract",
+  "version": "1.0.0",
+  "description": "Defines a successful build and test run for a microservice, from source to docker push",
+  "main": "build-contract",
+  "bin": {
+    "build-contract": "./build-contract"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yolean/build-contract.git"
+  },
+  "author": "Yolean AB",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Yolean/build-contract/issues"
+  },
+  "homepage": "https://github.com/Yolean/build-contract#readme"
+}
