@@ -1,0 +1,10 @@
+version: "2"
+services:
+  nginx:
+    image: nginx
+  client:
+    build: ./client
+    environment:
+      TEST_EXIT_CODE: $TEST_EXIT_CODE
+    labels:
+      com.yolean.build-contract: ""
