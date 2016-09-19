@@ -9,11 +9,6 @@ ROOT=$PWD
 
 # echo "In $(pwd) at $(date -Iseconds) on $(hostname)"
 
-[ -f Dockerfile ] || {
-  echo "This can't be a build-contract compatible project, can it? There's no Dockerfile."
-  exit 1
-}
-
 function wait_for_contract {
   # Count the number of failed containers
   # NOTE: Assumes no other build contract process is running at the same time
