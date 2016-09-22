@@ -32,12 +32,12 @@ function wait_for_contract {
 cd $ROOT/build-contracts/
 for compose_file in $(ls | grep .yml); do
   docker_compose="docker-compose -f $compose_file"
+  $docker_compose rm -f
   $docker_compose up --build --force-recreate -d
   $docker_compose logs -f &
   bar=$(wait_for_contract)
   echo "Build Contract finished with $bar"
-  $docker_compose  kill
-  $docker_compose  rm -f
+  $docker_compose kill
   if [[ $bar -ne 0 ]]; then
     echo "ERROR: Build Contract failed, please see logs above for details"
     echo "ERROR: Aborting build!"
