@@ -39,7 +39,7 @@ for compose_file in $(ls | grep .yml); do
   $docker_compose  kill
   $docker_compose  rm -f
   if [[ $bar -ne 0 ]]; then
-    echo "ERROR: Build Contract failed, please see logs above for details"
+    echo "ERROR: Build Contract $compose_file failed, please see logs above for details"
     echo "ERROR: Aborting build!"
     exit $bar
   fi
