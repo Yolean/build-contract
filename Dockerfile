@@ -23,8 +23,6 @@ RUN update-rc.d -f docker remove
 VOLUME /source
 WORKDIR /source
 
-ENV PATH=/usr/src/app/build-contract:$PATH
-
-ENTRYPOINT /usr/src/app/build-contract
-ADD package.json build-contract parsetargets /usr/src/app/
-RUN cd /usr/src/app/ && npm install
+COPY package.json build-contract parsetargets /usr/src/app/
+RUN cd /usr/src/app/ && npm install && ln -s /usr/src/app/build-contract /usr/local/bin/build-contract
+ENTRYPOINT build-contract
