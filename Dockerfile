@@ -23,5 +23,7 @@ RUN update-rc.d -f docker remove
 VOLUME /source
 WORKDIR /source
 
-ENTRYPOINT build-contract
-ADD build-contract /usr/local/bin/
+ENV PATH=/usr/src/app/build-contract:$PATH
+
+ENTRYPOINT /usr/src/app/build-contract
+ADD build-contract parsetargets /usr/src/app/
