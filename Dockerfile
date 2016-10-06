@@ -26,4 +26,5 @@ WORKDIR /source
 ENV PATH=/usr/src/app/build-contract:$PATH
 
 ENTRYPOINT /usr/src/app/build-contract
-ADD build-contract parsetargets /usr/src/app/
+ADD package.json build-contract parsetargets /usr/src/app/
+RUN cd /usr/src/app/ && npm install
