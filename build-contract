@@ -41,10 +41,7 @@ cd $ROOT/build-contracts/
 for compose_file in $(ls | grep .yml); do
   docker_compose="docker-compose -f $compose_file"
   $docker_compose rm -f
-  # Set PUSH_TAG to latest to make sure that services with both
-  # `image` and `build` properties are built, and not pulled from registry.
-  # The latter causes numerous of huvudbrys
-  PUSH_TAG=latest $docker_compose up --build --force-recreate -d
+  $docker_compose up --build --force-recreate -d
   $docker_compose logs -f &
   bar=$(wait_for_contract)
   echo "Build Contract finished with $bar"
