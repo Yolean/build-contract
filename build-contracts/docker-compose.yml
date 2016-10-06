@@ -4,7 +4,9 @@ services:
     image: nginx
   client:
     build: ./client
+    image: localhost:5000/build-contract-test/client:$PUSH_TAG
     environment:
       TEST_EXIT_CODE: $TEST_EXIT_CODE
     labels:
       com.yolean.build-contract: ""
+      com.yolean.build-target: ""
