@@ -6,6 +6,12 @@ fi
 trap "exit" INT
 
 ROOT=$PWD
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+if [[ -z PUSH_TAG ]]; then
+  echo "Missing env. variable PUSH_TAG. Please set it and run again!"
+  exit 1
+fi
 
 # echo "In $(pwd) at $(date -Iseconds) on $(hostname)"
 
@@ -29,6 +35,7 @@ function wait_for_contract {
   fi
 }
 
+# Perform tests
 cd $ROOT/build-contracts/
 for compose_file in $(ls | grep .yml); do
   docker_compose="docker-compose -f $compose_file"
@@ -45,9 +52,13 @@ for compose_file in $(ls | grep .yml); do
   fi
 done
 
-echo "Build Contract finished. Building image and pushing to registry!"
+echo "Build Contract finished. Building images and pushing to registry!"
 
-# image_id=docker build $ROOT
-# image_name=localhost:5000/NAME_VERSION # TODO
-# docker tag image_id $image_name
-# docker push image_id
+# Push targets
+for compose_file in $(ls | grep .yml); do
+  docker_compose="docker-compose -f $compose_file"
+  targets="$(cat $compose_file | $DIR/parsetargets)"
+  for target in $targets; do
+    $docker_compose push $target
+  done
+done

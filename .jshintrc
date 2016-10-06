@@ -1,0 +1,10 @@
+{
+  "strict": false,
+  "node": true,
+  "browser": true,
+  "esnext": true,
+  "globals": { "fetch": true },
+  "globalstrict": true,
+  "undef": true,
+  "unused": true
+}

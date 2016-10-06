@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/Yolean/build-contract/issues"
   },
-  "homepage": "https://github.com/Yolean/build-contract#readme"
+  "homepage": "https://github.com/Yolean/build-contract#readme",
+  "dependencies": {
+    "yamljs": "0.2.8"
+  }
 }
