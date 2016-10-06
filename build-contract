@@ -8,7 +8,7 @@ trap "exit" INT
 ROOT=$PWD
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-if [[ -z PUSH_TAG ]]; then
+if [[ -z "$PUSH_TAG" ]]; then
   echo "Missing env. variable PUSH_TAG. Please set it and run again!"
   exit 1
 fi
