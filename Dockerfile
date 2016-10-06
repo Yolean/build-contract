@@ -14,6 +14,9 @@ RUN apt-get update \
 RUN curl -L https://github.com/docker/compose/releases/download/$compose_version/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose \
   && chmod +x /usr/local/bin/docker-compose
 
+RUN curl -sL https://deb.nodesource.com/setup_6.x | bash - \
+  && apt-get install -y nodejs
+
 # This image expects a mounted docker.sock or env that points to docker tcp
 RUN update-rc.d -f docker remove
 
