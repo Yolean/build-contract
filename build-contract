@@ -33,6 +33,7 @@ function wait_for_contract {
 # Perform tests
 cd $ROOT/build-contracts/
 for compose_file in $(ls | grep .yml); do
+  echo "  --- build-contract: $compose_file ---  "
   docker_compose="docker-compose -f $compose_file"
   $docker_compose rm -f
   $docker_compose up --build --force-recreate -d
