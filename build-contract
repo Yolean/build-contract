@@ -6,7 +6,7 @@ fi
 trap "exit" INT
 
 ROOT=$PWD
-DIR=$(dirname $(realpath $(which $0)))
+DIR=`dirname $(readlink $BASH_SOURCE || echo $BASH_SOURCE)`
 
 # echo "In $(pwd) at $(date -Iseconds) on $(hostname)"
 
