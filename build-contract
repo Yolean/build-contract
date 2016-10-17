@@ -7,6 +7,13 @@ trap "exit" INT
 
 ROOT=$PWD
 DIR=`dirname $(readlink $BASH_SOURCE || echo $BASH_SOURCE)`
+if [[ ! -z "$1" ]]; then
+  DO_PUSH=true
+else
+  DO_PUSH=false
+  echo "Dry run, no images will be pushed!"
+fi
+
 
 # echo "In $(pwd) at $(date -Iseconds) on $(hostname)"
 
@@ -48,13 +55,18 @@ for compose_file in $(ls | grep .yml); do
   fi
 done
 
-echo "Build Contract finished. Building images and pushing to registry!"
+echo "Build Contract finished."
 
 # Push targets
 for compose_file in $(ls | grep .yml); do
+  echo "  --- build-contract: $compose_file ---  "
   docker_compose="docker-compose -f $compose_file"
   targets="$(cat $compose_file | $DIR/parsetargets)"
   for target in $targets; do
-    $docker_compose push $target
+    echo "Found target \"$target\""
+    if [[ $DO_PUSH == true ]]; then
+      echo "Pushing target $target"
+      $docker_compose push $target
+    fi
   done
 done
