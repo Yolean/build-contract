@@ -14,7 +14,9 @@ const { services } = yamljs.parse(fs.readFileSync('/dev/stdin', 'UTF-8'));
 
 for (let key in services) {
   const service = services[key];
-  if (service.labels && TARGET_LABEL in service.labels) {
+  const labels = service.labels || [];
+  if (TARGET_LABEL in labels ||
+    (Array.isArray(labels) && labels.indexOf(TARGET_LABEL) !== -1)) {
 
     if (!VALID_PUSH_RE.test(service.image))
       throw new Error(`${service.image} is not a valid image name!`);
