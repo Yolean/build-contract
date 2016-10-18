@@ -11,7 +11,7 @@ if [[ ! -z "$1" ]]; then
   DO_PUSH=true
 else
   DO_PUSH=false
-  echo "Dry run, no images will be pushed!"
+  echo "  --- build-contract: Dry run, no images will be pushed! ---  "
 fi
 
 
@@ -55,7 +55,7 @@ for compose_file in $(ls | grep .yml); do
   fi
 done
 
-echo "Build Contract finished."
+echo "  --- build-contract: Build Contract finished. ---  "
 
 # Push targets
 for compose_file in $(ls | grep .yml); do
@@ -63,9 +63,9 @@ for compose_file in $(ls | grep .yml); do
   docker_compose="docker-compose -f $compose_file"
   targets="$(cat $compose_file | $DIR/parsetargets)"
   for target in $targets; do
-    echo "Found target \"$target\""
+    echo "  --- build-contract: Found target \"$target\" ---  "
     if [[ $DO_PUSH == true ]]; then
-      echo "Pushing target $target"
+      echo "  --- build-contract: Pushing target $target ---  "
       $docker_compose push $target
     fi
   done
