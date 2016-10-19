@@ -18,6 +18,7 @@ fi
 # echo "In $(pwd) at $(date -Iseconds) on $(hostname)"
 
 function wait_for_contract {
+  sleep 3
   # Count the number of failed containers
   # NOTE: Assumes no other build contract process is running at the same time
   test_containers=$(docker ps -aq --filter label=com.yolean.build-contract)
@@ -32,7 +33,6 @@ function wait_for_contract {
     echo 0
   else
     # We're not done yet
-    sleep 3
     wait_for_contract
   fi
 }
