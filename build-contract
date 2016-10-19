@@ -38,12 +38,17 @@ function wait_for_contract {
 }
 
 # Perform tests
+BUILD_FLAGS='--build --force-recreate';
+if [[ $DO_PUSH == true ]]; then
+  BUILD_FLAGS="$BUILD_FLAGS --pull";
+fi
+
 cd $ROOT/build-contracts/
 for compose_file in $(ls | grep .yml); do
   echo "  --- build-contract: $compose_file ---  "
   docker_compose="docker-compose -f $compose_file"
   $docker_compose rm -f
-  $docker_compose up --build --force-recreate -d
+  $docker_compose up $BUILD_FLAGS -d
   $docker_compose logs -f &
   bar=$(wait_for_contract)
   echo "Build Contract finished with $bar"
