@@ -7,11 +7,11 @@ trap "exit" INT
 
 ROOT=$PWD
 DIR=`dirname $(readlink $BASH_SOURCE || echo $BASH_SOURCE)`
-if [[ ! -z "$1" ]]; then
+if [[ "$1" == "push" ]]; then
   DO_PUSH=true
 else
   DO_PUSH=false
-  echo "  --- build-contract: Dry run, no images will be pushed! ---  "
+  echo "  --- build-contract: Offline run (builds will not docker pull and image: will not be pushed) ---  "
 fi
 
 
