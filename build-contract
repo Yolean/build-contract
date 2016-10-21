@@ -14,6 +14,8 @@ else
   echo "  --- build-contract: Offline run (builds will not docker pull and image: will not be pushed) ---  "
 fi
 
+[[ -z "$PROJECT_NAME" ]] && PROJECT_NAME=${ROOT##*/}
+
 GIT_COMMIT=$(git rev-parse --verify --short HEAD 2>/dev/null)
 if [[ ! -z "$GIT_COMMIT" ]]; then
   GIT_STATUS=$(git status -s)
@@ -52,10 +54,13 @@ if [[ $DO_PUSH == true ]]; then
   BUILD_FLAGS="$BUILD_FLAGS --pull";
 fi
 
-cd $ROOT/build-contracts/
-for compose_file in $(ls | grep .yml); do
-  echo "  --- build-contract: $compose_file ---  "
-  docker_compose="docker-compose -f $compose_file"
+CONTRACTS_DIR="build-contracts/"
+for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
+  compose_name=${compose_file%%\.yml}
+  compose_name=${compose_name%%\.docker-compose}
+  [[ ! -z "$PROJECT_NAME" ]] && compose_name="${PROJECT_NAME}_$compose_name"
+  echo "  --- build-contract: $compose_name ($CONTRACTS_DIR$compose_file) ---  "
+  docker_compose="docker-compose -f $CONTRACTS_DIR$compose_file -p $compose_name"
   $docker_compose rm -f
   $docker_compose build $BUILD_FLAGS
   $docker_compose up --force-recreate -d
