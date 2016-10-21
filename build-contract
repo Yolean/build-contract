@@ -20,7 +20,7 @@ if [[ ! -z "$GIT_COMMIT" ]]; then
   if [[ ! -z "$GIT_STATUS" ]]; then
     GIT_COMMIT="$GIT_COMMIT-dev"
   fi
-  echo "This is a git repo and GIT_COMMIT=$GIT_COMMIT"
+  echo "  --- build-contract: This is a git repo and GIT_COMMIT=$GIT_COMMIT ---  "
   export GIT_COMMIT
 fi
 
