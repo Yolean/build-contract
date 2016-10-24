@@ -25,5 +25,5 @@ WORKDIR /source
 
 COPY package.json build-contract parsetargets /usr/src/app/
 RUN cd /usr/src/app/ && npm install && ln -s /usr/src/app/build-contract /usr/local/bin/build-contract
-ENTRYPOINT build-contract
-CMD push
+ENTRYPOINT ["build-contract"]
+CMD ["push"]
