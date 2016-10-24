@@ -78,8 +78,9 @@ done
 echo "  --- build-contract: Build Contract finished. ---  "
 
 # Push targets
-for compose_file in $(ls | grep .yml); do
+for compose_file in $(ls "build-contracts/" | grep .yml); do
   echo "  --- build-contract: $compose_file ---  "
+  compose_file="build-contracts/$compose_file"
   docker_compose="docker-compose -f $compose_file"
   targets="$(cat $compose_file | $DIR/parsetargets)"
   for target in $targets; do
