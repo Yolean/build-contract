@@ -1,0 +1,26 @@
+#!/usr/bin/env node
+const yamljs = require('yamljs');
+const fs = require('fs');
+
+const TARGET_LABEL = 'com.yolean.build-target';
+
+// Let's not push anything where we don't want it!
+const VALID_PUSH_RE = /((^localhost\:5000)|(^\$REGISTRY_HOST)).*(\:\$PUSH_TAG$)/;
+// Matches two different approaches:
+// $REGISTRY_HOST/group/name:$PUSH_TAG
+// localhost:5000/group/name:$PUSH_TAG
+
+const { services } = yamljs.parse(fs.readFileSync('/dev/stdin', 'UTF-8'));
+
+for (let key in services) {
+  const service = services[key];
+  const labels = service.labels || [];
+  if (TARGET_LABEL in labels ||
+    (Array.isArray(labels) && labels.indexOf(TARGET_LABEL) !== -1)) {
+
+    if (!VALID_PUSH_RE.test(service.image))
+      throw new Error(`${service.image} is not a valid image name!`);
+
+    console.log(key);
+  }
+}

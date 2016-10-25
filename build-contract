@@ -6,10 +6,30 @@ fi
 trap "exit" INT
 
 ROOT=$PWD
+DIR=`dirname $(readlink $BASH_SOURCE || echo $BASH_SOURCE)`
+if [[ "$1" == "push" ]]; then
+  DO_PUSH=true
+else
+  DO_PUSH=false
+  echo "  --- build-contract: Offline run (builds will not docker pull and image: will not be pushed) ---  "
+fi
+
+[[ -z "$PROJECT_NAME" ]] && PROJECT_NAME=${ROOT##*/}
+
+GIT_COMMIT=$(git rev-parse --verify --short HEAD 2>/dev/null)
+if [[ ! -z "$GIT_COMMIT" ]]; then
+  GIT_STATUS=$(git status -s)
+  if [[ ! -z "$GIT_STATUS" ]]; then
+    GIT_COMMIT="$GIT_COMMIT-dev"
+  fi
+  echo "  --- build-contract: This is a git repo and GIT_COMMIT=$GIT_COMMIT ---  "
+  export GIT_COMMIT
+fi
 
 # echo "In $(pwd) at $(date -Iseconds) on $(hostname)"
 
 function wait_for_contract {
+  sleep 3
   # Count the number of failed containers
   # NOTE: Assumes no other build contract process is running at the same time
   test_containers=$(docker ps -aq --filter label=com.yolean.build-contract)
@@ -24,16 +44,26 @@ function wait_for_contract {
     echo 0
   else
     # We're not done yet
-    sleep 3
     wait_for_contract
   fi
 }
 
-cd $ROOT/build-contracts/
-for compose_file in $(ls | grep .yml); do
-  docker_compose="docker-compose -f $compose_file"
+# Perform tests
+BUILD_FLAGS='';
+if [[ $DO_PUSH == true ]]; then
+  BUILD_FLAGS="$BUILD_FLAGS --pull";
+fi
+
+CONTRACTS_DIR="build-contracts/"
+for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
+  compose_name=${compose_file%%\.yml}
+  compose_name=${compose_name%%\.docker-compose}
+  [[ ! -z "$PROJECT_NAME" ]] && compose_name="${PROJECT_NAME}_$compose_name"
+  echo "  --- build-contract: $compose_name ($CONTRACTS_DIR$compose_file) ---  "
+  docker_compose="docker-compose -f $CONTRACTS_DIR$compose_file -p $compose_name"
   $docker_compose rm -f
-  $docker_compose up --build --force-recreate -d
+  $docker_compose build $BUILD_FLAGS
+  $docker_compose up --force-recreate -d
   $docker_compose logs -f &
   bar=$(wait_for_contract)
   echo "Build Contract finished with $bar"
@@ -45,9 +75,19 @@ for compose_file in $(ls | grep .yml); do
   fi
 done
 
-echo "Build Contract finished. Building image and pushing to registry!"
+echo "  --- build-contract: Build Contract finished. ---  "
 
-# image_id=docker build $ROOT
-# image_name=localhost:5000/NAME_VERSION # TODO
-# docker tag image_id $image_name
-# docker push image_id
+# Push targets
+for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
+  echo "  --- build-contract: $compose_file ---  "
+  compose_file="$CONTRACTS_DIR$compose_file"
+  docker_compose="docker-compose -f $compose_file"
+  targets="$(cat $compose_file | $DIR/parsetargets)"
+  for target in $targets; do
+    echo "  --- build-contract: Found target \"$target\" ---  "
+    if [[ $DO_PUSH == true ]]; then
+      echo "  --- build-contract: Pushing target $target ---  "
+      $docker_compose push $target
+    fi
+  done
+done
