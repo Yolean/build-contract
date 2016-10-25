@@ -30,10 +30,12 @@ fi
 
 function wait_for_contract {
   sleep 3
+  compose_name=$(echo "$1" | sed 's/[^A-Za-z0-9]//g')
   # Count the number of failed containers
   # NOTE: Assumes no other build contract process is running at the same time
-  test_containers=$(docker ps -aq --filter label=com.yolean.build-contract)
-  n_running_test_containers=$(docker ps -q --filter label=com.yolean.build-contract | wc -l)
+  filters="-f label=com.yolean.build-contract -f name=$compose_name"
+  test_containers=$(docker ps -aq $filters)
+  n_running_test_containers=$(docker ps -q $filters | wc -l)
   n_failures=$(docker inspect -f "{{.State.ExitCode}}" $test_containers | grep -v 0 | wc -l)
 
   if [[ $n_failures -gt 0 ]]; then
@@ -44,7 +46,7 @@ function wait_for_contract {
     echo 0
   else
     # We're not done yet
-    wait_for_contract
+    wait_for_contract "$1"
   fi
 }
 
@@ -65,7 +67,7 @@ for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
   $docker_compose build $BUILD_FLAGS
   $docker_compose up --force-recreate -d
   $docker_compose logs -f &
-  bar=$(wait_for_contract)
+  bar=$(wait_for_contract $compose_name)
   echo "Build Contract finished with $bar"
   $docker_compose kill
   if [[ $bar -ne 0 ]]; then
