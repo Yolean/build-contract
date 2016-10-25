@@ -68,8 +68,8 @@ for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
   # and volumes (including named volumes declared in the docker-compose.yml file)
   $docker_compose down -v
 
-  $docker_compose build $BUILD_FLAGS
-  $docker_compose up --force-recreate -d
+  #$docker_compose build $BUILD_FLAGS
+  $docker_compose up --build --force-recreate -d
   $docker_compose logs -f &
   bar=$(wait_for_contract $compose_name)
   echo "Build Contract finished with $bar"
