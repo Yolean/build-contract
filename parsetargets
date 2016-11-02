@@ -19,7 +19,7 @@ for (let key in services) {
     (Array.isArray(labels) && labels.indexOf(TARGET_LABEL) !== -1)) {
 
     if (!VALID_PUSH_RE.test(service.image))
-      throw new Error(`${service.image} is not a valid image name!`);
+      throw new Error('Not a valid image name: ' + service.image);
 
     console.log(key);
   }
