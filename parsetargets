@@ -5,10 +5,12 @@ const fs = require('fs');
 const TARGET_LABEL = 'com.yolean.build-target';
 
 // Let's not push anything where we don't want it!
-const VALID_PUSH_RE = /((^localhost\:5000)|(^\$REGISTRY_HOST)).*\:(\$[A-Z_]+|[0-9a-z\.-]+)$/;
+const VALID_PUSH_RE = /((^localhost\:5000)|(^\$REGISTRY_HOST)).*\:(\$\{?(?:[A-Z_]+|[0-9a-z\.-])+\}?)$/;
 // Matches two different approaches:
 // $REGISTRY_HOST/group/name:$PUSH_TAG
 // localhost:5000/group/name:$PUSH_TAG
+// $REGISTRY_HOST/group/name:${PUSH_TAG}
+// localhost:5000/group/name:${PUSH_TAG}
 
 const { services } = yamljs.parse(fs.readFileSync('/dev/stdin', 'UTF-8'));
 

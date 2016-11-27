@@ -63,7 +63,11 @@ for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
   [[ ! -z "$PROJECT_NAME" ]] && compose_name="${PROJECT_NAME}_$compose_name"
   echo "  --- build-contract: $compose_name ($CONTRACTS_DIR$compose_file) ---  "
   docker_compose="docker-compose -f $CONTRACTS_DIR$compose_file -p $compose_name"
-  $docker_compose rm -f
+
+  # Stops and removes containers, networks
+  # and volumes (including named volumes declared in the docker-compose.yml file)
+  $docker_compose down -v
+
   $docker_compose build $BUILD_FLAGS
   $docker_compose up --force-recreate -d
   $docker_compose logs -f &
