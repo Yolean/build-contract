@@ -1,7 +1,7 @@
 FROM debian:jessie
 
 ENV docker_version=1.11.2-0~jessie
-ENV compose_version=1.8.0
+ENV compose_version=1.9.0-rc2
 
 RUN apt-get update \
   && apt-get install -y apt-transport-https curl ca-certificates \
