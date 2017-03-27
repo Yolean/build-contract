@@ -1,6 +1,6 @@
 FROM debian:jessie
 
-ENV docker_version=1.11.2-0~jessie
+ENV docker_version=1.13.1-0~debian-jessie
 ENV compose_version=1.11.2
 
 RUN apt-get update \
