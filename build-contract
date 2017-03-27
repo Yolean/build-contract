@@ -16,6 +16,8 @@ fi
 
 [[ -z "$PROJECT_NAME" ]] && PROJECT_NAME=${ROOT##*/}
 
+export BUILD_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
 GIT_COMMIT=$(git rev-parse --verify --short HEAD 2>/dev/null)
 if [[ ! -z "$GIT_COMMIT" ]]; then
   GIT_STATUS=$(git status -s)
