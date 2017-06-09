@@ -5,7 +5,7 @@ const fs = require('fs');
 const TARGET_LABEL = 'com.yolean.build-target';
 
 // Let's not push anything where we don't want it!
-const VALID_PUSH_RE = /((^localhost\:5000)|(^\$REGISTRY_HOST)).*\:(\$\{?(?:[A-Z_]+|[0-9a-z\.-])+\}?)$/;
+const VALID_PUSH_RE = /^localhost/;
 // Matches two different approaches:
 // $REGISTRY_HOST/group/name:$PUSH_TAG
 // localhost:5000/group/name:$PUSH_TAG
@@ -21,7 +21,7 @@ for (let key in services) {
     (Array.isArray(labels) && labels.indexOf(TARGET_LABEL) !== -1)) {
 
     if (!VALID_PUSH_RE.test(service.image))
-      throw new Error('Not a valid image name: ' + service.image);
+      throw new Error('build-contract only wants to push to "localhost..."! Not a valid image name: ' + service.image);
 
     console.log(key);
   }
