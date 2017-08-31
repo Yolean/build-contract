@@ -18,7 +18,7 @@ fi
 
 export BUILD_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-GIT_COMMIT=$(git rev-parse --verify --short HEAD 2>/dev/null)
+GIT_COMMIT=$(git rev-parse --verify --short HEAD 2>/dev/null || echo '')
 if [[ ! -z "$GIT_COMMIT" ]]; then
   GIT_STATUS=$(git status -s)
   if [[ ! -z "$GIT_STATUS" ]]; then
