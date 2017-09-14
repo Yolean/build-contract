@@ -79,6 +79,7 @@ for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
   if [[ $bar -ne 0 ]]; then
     echo "ERROR: Build Contract $compose_file failed, please see logs above for details"
     echo "ERROR: Aborting build!"
+    $docker_compose ps
     exit $bar
   fi
 done
