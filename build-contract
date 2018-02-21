@@ -14,7 +14,18 @@ else
   echo "  --- build-contract: Offline run (builds will not docker pull and image: will not be pushed) ---  "
 fi
 
+if [[ "$2" == "git-tag" ]]; then
+  DO_GIT_TAG=true
+  echo "  --- build-contract: Git tagging enabled. A git tag "$GIT_TAG_PREFIX"<SHA256> will be created and pushed to git ---  "
+else
+  DO_GIT_TAG=false
+fi
+
 [[ -z "$PROJECT_NAME" ]] && PROJECT_NAME=${ROOT##*/}
+
+# Support setting customized remote helped developing the git push tag feature
+# So I'm keeping this as it's likely to be helpful in the future too.
+[[ -z "$GIT_PUSH_TAG_REMOTE" ]] && GIT_PUSH_TAG_REMOTE=origin
 
 export BUILD_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
@@ -74,11 +85,11 @@ for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
   $docker_compose up --force-recreate -d
   $docker_compose logs -f &
   bar=$(wait_for_contract $compose_name)
-  echo "Build Contract finished with $bar"
+  echo "  --- build-contract: Build Contract finished with $bar"
   $docker_compose kill
   if [[ $bar -ne 0 ]]; then
-    echo "ERROR: Build Contract $compose_file failed, please see logs above for details"
-    echo "ERROR: Aborting build!"
+    echo "  --- build-contract: ERROR: Build Contract $compose_file failed, please see logs above for details"
+    echo "  --- build-contract: ERROR: Aborting build!"
     $docker_compose ps
     exit $bar
   fi
@@ -96,7 +107,20 @@ for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
     echo "  --- build-contract: Found target \"$target\" ---  "
     if [[ $DO_PUSH == true ]]; then
       echo "  --- build-contract: Pushing target $target ---  "
-      $docker_compose push $target
+
+      # Hacky way of pushing the image, parsing the sha out of it, and at the same time keeping stdout on the screen.
+      # But then again, bash quickly becomes hacky :)
+      sha=$($docker_compose push $target | tee /dev/tty | grep "digest: sha256:" | sed 's|.*sha256:||' | awk '{ print $1 }')
+
+      # Git tag create and push, should be idempotent. I.e. building the same commit twice shouldn't cause any trouble
+      if [[ $DO_GIT_TAG == true ]]; then
+        tag="$GIT_TAG_PREFIX""$sha"
+        echo "  --- build-contract: Tagging current commit $GIT_COMMIT with git tag $tag ---  "
+        git tag | grep $tag > /dev/null && echo "  --- build-contract: $tag already exists (was this commit built already?) ---  "
+        git tag | grep $tag > /dev/null || git tag $tag
+        echo "  --- build-contract: Pushing tag to remote $GIT_PUSH_TAG_REMOTE ---  "
+        git push $GIT_PUSH_TAG_REMOTE $tag
+      fi
     fi
   done
 done
