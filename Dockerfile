@@ -1,4 +1,4 @@
-FROM debian:jessie
+FROM yolean/node:sha256:ebdf2658467fb8408c242bdde9ec6714c838ff3612041f46e57b4717acdc0a84
 
 ENV docker_version=1.13.1-0~debian-jessie
 ENV compose_version=1.11.2
@@ -16,9 +16,6 @@ RUN update-rc.d -f docker remove
 
 RUN curl -L https://github.com/docker/compose/releases/download/$compose_version/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose \
   && chmod +x /usr/local/bin/docker-compose
-
-RUN curl -sL https://deb.nodesource.com/setup_6.x | bash - \
-  && apt-get install -y nodejs
 
 VOLUME /source
 WORKDIR /source
