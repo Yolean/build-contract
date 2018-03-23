@@ -1,7 +1,7 @@
 FROM yolean/node@sha256:ebdf2658467fb8408c242bdde9ec6714c838ff3612041f46e57b4717acdc0a84
 
 ENV docker_version=17.06.2~ce-0~debian
-ENV compose_version=1.11.2
+ENV compose_version=1.16.1
 
 RUN apt-get update \
   && apt-get install -y apt-transport-https curl ca-certificates gnupg2 \
