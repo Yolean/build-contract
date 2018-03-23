@@ -77,7 +77,6 @@ if [ ! -z "$MONOREPO_DEPS" ]; then
   cp package.json package.json.monorepo-backup
   for DEP in $MONOREPO_DEPS; do
     pushd $DEP
-    #npm install
     TARBALL=$(npm pack | tail -n 1)
     popd
     cp -v $DEP/$TARBALL npm-monorepo/
