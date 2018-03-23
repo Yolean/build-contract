@@ -14,18 +14,7 @@ else
   echo "  --- build-contract: Offline run (builds will not docker pull and image: will not be pushed) ---  "
 fi
 
-if [[ "$2" == "git-tag" ]]; then
-  DO_GIT_TAG=true
-  echo "  --- build-contract: Git tagging enabled. A git tag "$GIT_TAG_PREFIX"<SHA256> will be created and pushed to git ---  "
-else
-  DO_GIT_TAG=false
-fi
-
 [[ -z "$PROJECT_NAME" ]] && PROJECT_NAME=${ROOT##*/}
-
-# Support setting customized remote helped developing the git push tag feature
-# So I'm keeping this as it's likely to be helpful in the future too.
-[[ -z "$GIT_PUSH_TAG_REMOTE" ]] && GIT_PUSH_TAG_REMOTE=origin
 
 export BUILD_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
@@ -69,6 +58,23 @@ if [[ $DO_PUSH == true ]]; then
   BUILD_FLAGS="$BUILD_FLAGS --pull";
 fi
 
+if [ -z ${MONOREPO_DEPS+x} ]; then
+  MONOREPO_DEPS=$(grep '"../' package.json | awk -F '"' '{ print $4 }')
+fi
+if [ ! -z "$MONOREPO_DEPS" ]; then
+  mkdir -p npm-monorepo
+  cp package.json package.json.monorepo-backup
+  for DEP in $MONOREPO_DEPS; do
+    pushd $DEP
+    TARBALL=$(npm pack | tail -n 1)
+    popd
+    cp -v $DEP/$TARBALL npm-monorepo/
+    sed -i "s|$DEP|file://./npm-monorepo/$TARBALL|" package.json
+  done
+  echo "  --- monorepo compatibility ---  "
+  git diff package.json
+fi
+
 CONTRACTS_DIR="build-contracts/"
 for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
   compose_name=${compose_file%%\.yml}
@@ -97,6 +103,8 @@ done
 
 echo "  --- build-contract: Build Contract finished. ---  "
 
+[ -f package.json.monorepo-backup ] && mv package.json.monorepo-backup package.json
+
 # Push targets
 for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
   echo "  --- build-contract: $compose_file ---  "
@@ -107,20 +115,7 @@ for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
     echo "  --- build-contract: Found target \"$target\" ---  "
     if [[ $DO_PUSH == true ]]; then
       echo "  --- build-contract: Pushing target $target ---  "
-
-      # Hacky way of pushing the image, parsing the sha out of it, and at the same time keeping stdout on the screen.
-      # But then again, bash quickly becomes hacky :)
-      sha=$($docker_compose push $target | tee /dev/tty | grep "digest: sha256:" | sed 's|.*sha256:||' | awk '{ print $1 }')
-
-      # Git tag create and push, should be idempotent. I.e. building the same commit twice shouldn't cause any trouble
-      if [[ $DO_GIT_TAG == true ]]; then
-        tag="$GIT_TAG_PREFIX""$sha"
-        echo "  --- build-contract: Tagging current commit $GIT_COMMIT with git tag $tag ---  "
-        git tag | grep $tag > /dev/null && echo "  --- build-contract: $tag already exists (was this commit built already?) ---  "
-        git tag | grep $tag > /dev/null || git tag $tag
-        echo "  --- build-contract: Pushing tag to remote $GIT_PUSH_TAG_REMOTE ---  "
-        git push $GIT_PUSH_TAG_REMOTE $tag
-      fi
+      $docker_compose push $target
     fi
   done
 done
