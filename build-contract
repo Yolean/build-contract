@@ -69,7 +69,7 @@ if [ ! -z "$MONOREPO_DEPS" ]; then
     TARBALL=$(npm pack | tail -n 1)
     popd
     cp -v $DEP/$TARBALL npm-monorepo/
-    sed -i "s|$DEP|file://./npm-monorepo/$TARBALL|" package.json
+    sed -i.bak "s|$DEP|file://./npm-monorepo/$TARBALL|" package.json
   done
   echo "  --- monorepo compatibility ---  "
   git diff package.json
