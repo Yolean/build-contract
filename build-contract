@@ -59,17 +59,18 @@ if [[ $DO_PUSH == true ]]; then
 fi
 
 if [ -z ${MONOREPO_DEPS+x} ]; then
-  MONOREPO_DEPS=$(grep '"../' package.json | awk -F '"' '{ print $4 }')
+  MONOREPO_DEPS=$(grep '"file:../' package.json | awk -F '"' '{ print $4 }')
 fi
 if [ ! -z "$MONOREPO_DEPS" ]; then
   mkdir -p npm-monorepo
   cp package.json package.json.monorepo-backup
-  for DEP in $MONOREPO_DEPS; do
+  for FILEDEP in $MONOREPO_DEPS; do
+    DEP=$(echo $FILEDEP | awk -F':' '{ print $2 }')
     pushd $DEP
     TARBALL=$(npm pack | tail -n 1)
     popd
     cp -v $DEP/$TARBALL npm-monorepo/
-    sed -i.bak "s|$DEP|file://./npm-monorepo/$TARBALL|" package.json
+    sed -i.bak "s|$DEP|./npm-monorepo/$TARBALL|" package.json
   done
   echo "  --- monorepo compatibility ---  "
   git diff package.json
