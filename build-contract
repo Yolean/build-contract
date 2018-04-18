@@ -59,7 +59,8 @@ if [[ $DO_PUSH == true ]]; then
 fi
 
 MONOREPO_PRE=$(cat package.json | grep '"build-contract-predockerbuild"' | awk -F '"' '{ print $4 }')
-if [[ ! -z "$MONOREPO_PRE" ]]; then npm run build-contract-predockerbuild; fi
+if [[ "$MONOREPO_PRE" == "#" ]]; then $DIR/nodejs/build-contract-predockerbuild
+elif [[ ! -z "$MONOREPO_PRE" ]]; then npm run build-contract-predockerbuild; fi
 
 CONTRACTS_DIR="build-contracts/"
 for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
@@ -90,7 +91,8 @@ done
 echo "  --- build-contract: Build Contract finished. ---  "
 
 MONOREPO_POST=$(cat package.json | grep '"build-contract-postdockerbuild"' | awk -F '"' '{ print $4 }')
-if [[ ! -z "$MONOREPO_POST" ]]; then npm run build-contract-postdockerbuild; fi
+if [[ "$MONOREPO_POST" == "#" ]]; then $DIR/nodejs/build-contract-postdockerbuild
+elif [[ ! -z "$MONOREPO_POST" ]]; then npm run build-contract-postdockerbuild; fi
 
 # Push targets
 for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
