@@ -58,7 +58,7 @@ if [[ $DO_PUSH == true ]]; then
   BUILD_FLAGS="$BUILD_FLAGS --pull";
 fi
 
-$DIR/nodejs/build-contract-predockerbuild
+npm run build-contract-predockerbuild
 
 CONTRACTS_DIR="build-contracts/"
 for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
@@ -88,7 +88,7 @@ done
 
 echo "  --- build-contract: Build Contract finished. ---  "
 
-$DIR/nodejs/build-contract-postdockerbuild
+npm run build-contract-postdockerbuild
 
 # Push targets
 for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
