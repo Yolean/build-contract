@@ -58,7 +58,8 @@ if [[ $DO_PUSH == true ]]; then
   BUILD_FLAGS="$BUILD_FLAGS --pull";
 fi
 
-npm run build-contract-predockerbuild
+MONOREPO_PRE=$(cat package.json | grep '"build-contract-predockerbuild"' | awk -F '"' '{ print $4 }')
+if [[ ! -z "$MONOREPO_PRE" ]]; then npm run build-contract-predockerbuild; fi
 
 CONTRACTS_DIR="build-contracts/"
 for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
@@ -88,7 +89,8 @@ done
 
 echo "  --- build-contract: Build Contract finished. ---  "
 
-npm run build-contract-postdockerbuild
+MONOREPO_POST=$(cat package.json | grep '"build-contract-postdockerbuild"' | awk -F '"' '{ print $4 }')
+if [[ ! -z "$MONOREPO_POST" ]]; then npm run build-contract-postdockerbuild; fi
 
 # Push targets
 for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
