@@ -1,0 +1,2 @@
+#!/bin/bash
+[ -f package.json.monorepo-backup ] && mv package.json.monorepo-backup package.json

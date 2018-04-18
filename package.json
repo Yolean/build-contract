@@ -4,7 +4,9 @@
   "description": "Defines a successful build and test run for a microservice, from source to docker push",
   "main": "build-contract",
   "bin": {
-    "build-contract": "./build-contract"
+    "build-contract": "./build-contract",
+    "build-contract-predockerbuild": "./nodejs/build-contract-predockerbuild",
+    "build-contract-postdockerbuild": "./nodejs/build-contract-postdockerbuild"
   },
   "repository": {
     "type": "git",
