@@ -58,22 +58,9 @@ if [[ $DO_PUSH == true ]]; then
   BUILD_FLAGS="$BUILD_FLAGS --pull";
 fi
 
-if [ -z ${MONOREPO_DEPS+x} ]; then
-  MONOREPO_DEPS=$(grep '"../' package.json | awk -F '"' '{ print $4 }')
-fi
-if [ ! -z "$MONOREPO_DEPS" ]; then
-  mkdir -p npm-monorepo
-  cp package.json package.json.monorepo-backup
-  for DEP in $MONOREPO_DEPS; do
-    pushd $DEP
-    TARBALL=$(npm pack | tail -n 1)
-    popd
-    cp -v $DEP/$TARBALL npm-monorepo/
-    sed -i.bak "s|$DEP|file://./npm-monorepo/$TARBALL|" package.json
-  done
-  echo "  --- monorepo compatibility ---  "
-  git diff package.json
-fi
+MONOREPO_PRE=$(cat package.json | grep '"build-contract-predockerbuild"' | awk -F '"' '{ print $4 }')
+if [[ "$MONOREPO_PRE" == "#" ]]; then $DIR/nodejs/build-contract-predockerbuild
+elif [[ ! -z "$MONOREPO_PRE" ]]; then npm run build-contract-predockerbuild; fi
 
 CONTRACTS_DIR="build-contracts/"
 for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
@@ -103,7 +90,9 @@ done
 
 echo "  --- build-contract: Build Contract finished. ---  "
 
-[ -f package.json.monorepo-backup ] && mv package.json.monorepo-backup package.json
+MONOREPO_POST=$(cat package.json | grep '"build-contract-postdockerbuild"' | awk -F '"' '{ print $4 }')
+if [[ "$MONOREPO_POST" == "#" ]]; then $DIR/nodejs/build-contract-postdockerbuild
+elif [[ ! -z "$MONOREPO_POST" ]]; then npm run build-contract-postdockerbuild; fi
 
 # Push targets
 for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
