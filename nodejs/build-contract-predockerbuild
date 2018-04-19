@@ -1,10 +1,89 @@
-#!/bin/bash
-# At next scope creep please rewrite this with nodejs, as it'll only be used with nodejs environments anyway
+#!/usr/bin/env node
+const path = require('path');
+const fs = require('fs');
+
+const npmLib = new Promise((resolve,reject) => {
+  // ls -la $(which npm), or we could do something like https://stackoverflow.com/a/25106648/113009
+  const guesses = ['/usr/local/lib/node_modules/npm'];
+  const check = (path) => fs.stat(path, (err, stats) => {
+    if (err) throw err;
+    if (stats && stats.isDirectory()) return require(path).load((err, loaded) => {
+      if (err) throw err;
+      resolve(loaded);
+    });
+    console.debug('# Not the npm lib path:', path);
+    if (!guesses.length) return reject(guesses);
+    check(guesses.shift());
+  });
+  check(guesses.shift());
+});
+
+let dir = path.resolve('.');
+let mdir = path.join(dir,'npm-monorepo');
+let pdir = path.join(mdir, 'prod');
+let pmdir = path.join(pdir, 'npm-monorepo');
+
+/**
+ * Gets a minimal package.json with only the stuff that should
+ * trigger an invalidation of docker build cache for the npm ci layer.
+ */
+function getProdPackage(packageJson) {
+  return {
+    name: packageJson.name,
+    version: packageJson.version,
+    dependencies: packageJson.dependencies
+  }
+}
+
+/**
+ * Produces a package tarball.
+ */
+function npmPackage(modulePath, cb) {
+  npmLib.then(npm => {
+    process.chdir(modulePath);
+    npm.commands.pack([], (err, result) => {
+      if (err) return cb(err);
+      console.debug('# pack result', JSON.stringify(result));
+      cb(null, result[0]);
+    });
+  });
+}
+
+let package = require(path.join(dir,'package.json'));
+let monorepoDeps = Object.keys(package.dependencies).filter(
+  dep => /^file:\.\.\//.test(package.dependencies[dep]));
+
+let mk = fs.mkdir;
+mk(dir, mk.bind(null, mdir, mk.bind(null, pdir, mk.bind(null, pmdir, err => {
+  if (err) {
+    if (err.code !== 'EEXIST') throw err;
+    console.log('# Monorepo dir structure already present', pmdir);
+  }
+
+  const prodPackage = getProdPackage(package);
+  fs.writeFile(path.join(pdir, 'package.json'), JSON.stringify(prodPackage, null, '  '),
+    err => { if (err) throw err; });
+
+  monorepoDeps.map(dep => {
+    let uri = package.dependencies[dep];
+    let urimatch = /^file:(\.\.\/.*)/.exec(uri);
+    if (!urimatch) return console.error('# Unrecognized monorepo dependency URI', uri);
+    let path = urimatch[1];
+
+    npmPackage(path, (err, tgz) => {
+      if (err) throw err;
+      console.log('# Packed', path, tgz);
+    });
+  });
+
+}))));
+
+/*
 if [ -z ${MONOREPO_DEPS+x} ]; then
   MONOREPO_DEPS=$(grep '"file:../' package.json | awk -F '"' '{ print $4 }')
 fi
 if [ ! -z "$MONOREPO_DEPS" ]; then
-  mkdir -p npm-monorepo/prod/
+  mkdir -p npm-monorepo/prod/npm-monorepo
   cp package.json package.json.monorepo-backup
   for FILEDEP in $MONOREPO_DEPS; do
     DEP=$(echo $FILEDEP | awk -F':' '{ print $2 }')
@@ -18,3 +97,4 @@ if [ ! -z "$MONOREPO_DEPS" ]; then
   echo "  --- monorepo compatibility ---  "
   git diff package.json
 fi
+*/
