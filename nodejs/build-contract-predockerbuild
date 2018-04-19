@@ -43,7 +43,7 @@ function npmPackage(modulePath, cb) {
   npmLib.then(npm => {
     npm.commands.pack([], (err, result) => {
       if (err) return cb(err);
-      console.debug('# pack result', JSON.stringify(result));
+      console.debug('# pack result', modulePath, JSON.stringify(result));
       const name = result[0];
       let tgz = path.join(modulePath, name);
       fs.stat(tgz, (err, stats) => {
@@ -75,7 +75,8 @@ mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
   }
 
   const completed = () => {
-    process.chdir(mdir); // for npm
+    process.chdir(dir); // restore after npm
+    fs.unlink(path.join(cimdir, 'package.json'), err => err && console.error('Failed to clean up after sourceless tgz pack', err));
     fs.writeFile(path.join(mdir, 'package.json'), stringifyPackageJson(package),
       err => { if (err) throw err; });
     const ciPackage = getCiPackage(package);
@@ -91,7 +92,8 @@ mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
     if (!urimatch) return console.error('# Unrecognized monorepo dependency URI', uri);
     let depdir = urimatch[1];
 
-    process.chdir(depdir); // for npm
+    process.chdir(dir); process.chdir(depdir); // for npm
+    let depPackage = require(path.resolve('./package.json'));
     npmPackage(depdir, (err, tgzname) => {
       if (err) throw err;
       console.log('# Packed', tgzname);
@@ -99,7 +101,15 @@ mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
         if (err) throw err;
         console.log('# Created monorepo tarball', mdir, tgzname);
         package.dependencies[dep] = `file:npm-monorepo/${tgzname}`;
-        next(monorepoDeps.shift());
+
+        let depCiPackage = getCiPackage(depPackage);
+        fs.writeFile(path.join(cimdir, 'package.json'), stringifyPackageJson(depCiPackage), err => {
+          process.chdir(cimdir); // for npm
+          npmPackage(cimdir, (err, tgzname) => {
+            console.log('# Created monorepo sourceless tarball for npm ci', cimdir, tgzname);
+            next(monorepoDeps.shift());
+          });
+        });
       });
     });
   };
