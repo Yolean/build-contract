@@ -40,8 +40,7 @@ function getProdPackage(packageJson) {
  */
 function npmPackage(modulePath, cb) {
   npmLib.then(npm => {
-    process.chdir(modulePath);
-    npm.commands.pack([], (err, result) => {
+    npm.commands.pack([modulePath], (err, result) => {
       if (err) return cb(err);
       console.debug('# pack result', JSON.stringify(result));
       cb(null, result[0]);
