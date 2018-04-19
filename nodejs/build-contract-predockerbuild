@@ -19,15 +19,15 @@ const npmLib = new Promise((resolve,reject) => {
 });
 
 let dir = path.resolve('.');
-let mdir = path.join(dir,'npm-monorepo');
-let pdir = path.join(mdir, 'prod');
-let pmdir = path.join(pdir, 'npm-monorepo');
+let mdir = path.join(dir, 'npm-monorepo');
+let cidir = path.join(mdir, 'ci');
+let cimdir = path.join(cidir, 'npm-monorepo');
 
 /**
  * Gets a minimal package.json with only the stuff that should
  * trigger an invalidation of docker build cache for the npm ci layer.
  */
-function getProdPackage(packageJson) {
+function getCiPackage(packageJson) {
   return {
     name: packageJson.name,
     version: packageJson.version,
@@ -39,61 +39,70 @@ function getProdPackage(packageJson) {
  * Produces a package tarball.
  */
 function npmPackage(modulePath, cb) {
+  if (process.cwd() !== path.resolve(modulePath)) throw new Error('npm expected to run in ' + modulePath + ', not ' + process.cwd()); // can we do away with this statefulness?
   npmLib.then(npm => {
-    npm.commands.pack([modulePath], (err, result) => {
+    npm.commands.pack([], (err, result) => {
       if (err) return cb(err);
       console.debug('# pack result', JSON.stringify(result));
-      cb(null, result[0]);
+      const name = result[0];
+      let tgz = path.join(modulePath, name);
+      fs.stat(tgz, (err, stats) => {
+        if (err) console.error('# npm pack failed to produce the result file', tgz);
+        cb(err, err ? undefined : name);
+      });
     });
   });
+}
+
+function stringifyPackageJson(package) {
+  return JSON.stringify(package, null, '  ');
 }
 
 let package = require(path.join(dir,'package.json'));
 let monorepoDeps = Object.keys(package.dependencies).filter(
   dep => /^file:\.\.\//.test(package.dependencies[dep]));
 
+if (!monorepoDeps.length) {
+  console.log('# Zero monorepo dependencies found');
+  process.exit(0);
+}
+
 let mk = fs.mkdir;
-mk(dir, mk.bind(null, mdir, mk.bind(null, pdir, mk.bind(null, pmdir, err => {
+mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
   if (err) {
     if (err.code !== 'EEXIST') throw err;
-    console.log('# Monorepo dir structure already present', pmdir);
+    console.log('# Monorepo dir structure already present', cimdir);
   }
 
-  const prodPackage = getProdPackage(package);
-  fs.writeFile(path.join(pdir, 'package.json'), JSON.stringify(prodPackage, null, '  '),
-    err => { if (err) throw err; });
+  const completed = () => {
+    process.chdir(mdir); // for npm
+    fs.writeFile(path.join(mdir, 'package.json'), stringifyPackageJson(package),
+      err => { if (err) throw err; });
+    const ciPackage = getCiPackage(package);
+    fs.writeFile(path.join(cidir, 'package.json'), stringifyPackageJson(ciPackage),
+      err => { if (err) throw err; });
+  };
 
-  monorepoDeps.map(dep => {
+  const next = dep => {
+    if (!dep) return completed();
+
     let uri = package.dependencies[dep];
     let urimatch = /^file:(\.\.\/.*)/.exec(uri);
     if (!urimatch) return console.error('# Unrecognized monorepo dependency URI', uri);
-    let path = urimatch[1];
+    let depdir = urimatch[1];
 
-    npmPackage(path, (err, tgz) => {
+    process.chdir(depdir); // for npm
+    npmPackage(depdir, (err, tgzname) => {
       if (err) throw err;
-      console.log('# Packed', path, tgz);
+      console.log('# Packed', tgzname);
+      fs.rename(path.join(depdir, tgzname), path.join(mdir, tgzname), err => {
+        if (err) throw err;
+        console.log('# Created monorepo tarball', mdir, tgzname);
+        package.dependencies[dep] = `file:npm-monorepo/${tgzname}`;
+        next(monorepoDeps.shift());
+      });
     });
-  });
+  };
+  next(monorepoDeps.shift());
 
 }))));
-
-/*
-if [ -z ${MONOREPO_DEPS+x} ]; then
-  MONOREPO_DEPS=$(grep '"file:../' package.json | awk -F '"' '{ print $4 }')
-fi
-if [ ! -z "$MONOREPO_DEPS" ]; then
-  mkdir -p npm-monorepo/prod/npm-monorepo
-  cp package.json package.json.monorepo-backup
-  for FILEDEP in $MONOREPO_DEPS; do
-    DEP=$(echo $FILEDEP | awk -F':' '{ print $2 }')
-    pushd $DEP
-    TARBALL=$(npm pack | tail -n 1)
-    # TODO here we can produce a prod-package-json tgz, for the npm ci step
-    popd
-    cp -v $DEP/$TARBALL npm-monorepo/
-    sed -i.bak "s|$DEP|./npm-monorepo/$TARBALL|" package.json
-  done
-  echo "  --- monorepo compatibility ---  "
-  git diff package.json
-fi
-*/
