@@ -4,12 +4,13 @@ if [ -z ${MONOREPO_DEPS+x} ]; then
   MONOREPO_DEPS=$(grep '"file:../' package.json | awk -F '"' '{ print $4 }')
 fi
 if [ ! -z "$MONOREPO_DEPS" ]; then
-  mkdir -p npm-monorepo
+  mkdir -p npm-monorepo/prod/
   cp package.json package.json.monorepo-backup
   for FILEDEP in $MONOREPO_DEPS; do
     DEP=$(echo $FILEDEP | awk -F':' '{ print $2 }')
     pushd $DEP
     TARBALL=$(npm pack | tail -n 1)
+    # TODO here we can produce a prod-package-json tgz, for the npm ci step
     popd
     cp -v $DEP/$TARBALL npm-monorepo/
     sed -i.bak "s|$DEP|./npm-monorepo/$TARBALL|" package.json
