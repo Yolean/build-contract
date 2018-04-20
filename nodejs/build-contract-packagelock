@@ -1,0 +1,13 @@
+#!/usr/bin/env node
+
+const { npmLib } = require('./build-contract-predockerbuild');
+
+npmLib.then(npm => {
+  npm.commands.install({
+    prod: true,
+    packageLockOnly: true,
+    ignoreScripts: true
+  }, (err, result) => {
+    console.log('install', err, result);
+  });
+});
