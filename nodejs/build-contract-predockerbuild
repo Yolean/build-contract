@@ -82,7 +82,11 @@ mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
     const ciPackage = getCiPackage(package);
     fs.writeFile(path.join(cidir, 'package.json'), stringifyPackageJson(ciPackage),
       err => { if (err) throw err; });
+    fs.unlink(path.join(cimdir, '.npmignore'), err => err && console.error(err));
   };
+
+  // Needed for the depCiPackage part in the callback stack below
+  fs.writeFile(path.join(cimdir, '.npmignore'), "*.tgz\n", err => err && console.error(err));
 
   const next = dep => {
     if (!dep) return completed();
