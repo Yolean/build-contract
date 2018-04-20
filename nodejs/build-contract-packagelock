@@ -1,0 +1,10 @@
+#!/bin/bash
+
+SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
+
+$SCRIPTPATH/build-contract-predockerbuild
+
+cd npm-monorepo/ci
+npm install --production --package-lock-only --ignore-scripts
+cp package-lock.json ../../
+cd ../../
