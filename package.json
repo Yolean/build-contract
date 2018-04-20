@@ -6,7 +6,7 @@
   "bin": {
     "build-contract": "./build-contract",
     "build-contract-predockerbuild": "./nodejs/build-contract-predockerbuild",
-    "build-contract-postdockerbuild": "./nodejs/build-contract-postdockerbuild"
+    "build-contract-packagelock": "./nodejs/build-contract-packagelock"
   },
   "repository": {
     "type": "git",
