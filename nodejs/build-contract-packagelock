@@ -1,13 +1,10 @@
-#!/usr/bin/env node
+#!/bin/bash
 
-const { npmLib } = require('./build-contract-predockerbuild');
+SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
-npmLib.then(npm => {
-  npm.commands.install({
-    prod: true,
-    packageLockOnly: true,
-    ignoreScripts: true
-  }, (err, result) => {
-    console.log('install', err, result);
-  });
-});
+$SCRIPTPATH/build-contract-predockerbuild
+
+cd npm-monorepo/ci
+npm install --production --package-lock-only --ignore-scripts
+cp package-lock.json ../../
+cd ../../
