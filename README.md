@@ -16,5 +16,5 @@ Add scripts to `package.json` like so, and build contract will pick them up:
 ```
   "scripts": {
     "build-contract-predockerbuild": "./node_modules/.bin/build-contract-predockerbuild",
-    "build-contract-postdockerbuild": "./node_modules/.bin/build-contract-postdockerbuild",
+    "packagelock": "rm -rf npm-monorepo/ && build-contract-predockerbuild && cd npm-monorepo/ci && npm install --production --package-lock-only --ignore-scripts && cp package-lock.json ../../",
 ```
