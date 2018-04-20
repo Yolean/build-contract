@@ -6,5 +6,5 @@ $SCRIPTPATH/build-contract-predockerbuild
 
 cd npm-monorepo/ci
 npm install --production --package-lock-only --ignore-scripts
-cp package-lock.json ../../
+mv package-lock.json ../../
 cd ../../
