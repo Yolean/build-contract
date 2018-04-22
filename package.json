@@ -20,5 +20,8 @@
   "homepage": "https://github.com/Yolean/build-contract#readme",
   "dependencies": {
     "yamljs": "0.2.8"
+  },
+  "peerDependencies": {
+    "npm": "5.8.0"
   }
 }
