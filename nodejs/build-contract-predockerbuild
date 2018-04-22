@@ -5,8 +5,7 @@ const fs = require('fs');
 const npmLib = new Promise((resolve,reject) => {
   // ls -la $(which npm), or we could do something like https://stackoverflow.com/a/25106648/113009
   const guesses = ['./node_modules/npm', '/usr/local/lib/node_modules/npm'];
-  const check = (path) => fs.stat(path, (err, stats) => {
-    if (!path) return reject(new Error("Failed to guess the npm lib\'s install path. Try `npm (link|install) npm`."));
+  const check = (path) => path ? fs.stat(path, (err, stats) => {
     if (err) return check(guesses.shift());
     let installed = /^(?:\.\/)?node_modules\/(.*)/.exec(path);
     if (installed) path = installed[1];
@@ -14,7 +13,7 @@ const npmLib = new Promise((resolve,reject) => {
       if (err) throw err;
       resolve(loaded);
     });
-  });
+  }) : reject(new Error("Failed to guess the npm lib\'s install path. Try `npm (link|install) npm`."));
   check(guesses.shift());
 });
 
