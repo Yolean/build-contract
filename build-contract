@@ -6,7 +6,7 @@ fi
 trap "exit" INT
 
 ROOT=$PWD
-DIR=`dirname $(readlink $BASH_SOURCE || echo $BASH_SOURCE)`
+DIR=`dirname $(realpath $0)`
 if [[ "$1" == "push" ]]; then
   DO_PUSH=true
 else
