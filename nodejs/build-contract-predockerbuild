@@ -36,17 +36,17 @@ function getCiPackage(packageJson) {
 
 /**
  * Produces a package tarball.
+ * @param modulePath In case we find a way to avoid depending on process.cwd
  */
 function npmPackage(modulePath, cb) {
-  if (process.cwd() !== path.resolve(modulePath)) throw new Error('npm expected to run in ' + modulePath + ', not ' + process.cwd()); // can we do away with this statefulness?
+  if (process.cwd() !== modulePath) throw new Error('npm expected to run in ' + modulePath + ', not ' + process.cwd());
   npmLib.then(npm => {
     npm.commands.pack([], (err, result) => {
       if (err) return cb(err);
       console.debug('# pack result', modulePath, JSON.stringify(result));
       const name = result[0];
-      let tgz = path.join(modulePath, name);
-      fs.stat(tgz, (err, stats) => {
-        if (err) console.error('# npm pack failed to produce the result file', tgz);
+      fs.stat(name, (err, stats) => {
+        if (err) console.error('# npm pack failed to produce the result file', npm, process.cwd());
         cb(err, err ? undefined : name);
       });
     });
@@ -93,14 +93,14 @@ mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
     let uri = package.dependencies[dep];
     let urimatch = /^file:(\.\.\/.*)/.exec(uri);
     if (!urimatch) return console.error('# Unrecognized monorepo dependency URI', uri);
-    let depdir = urimatch[1];
+    let depdir = path.normalize(path.join(dir, urimatch[1]));
 
     process.chdir(dir); process.chdir(depdir); // for npm
     let depPackage = require(path.resolve('./package.json'));
     npmPackage(depdir, (err, tgzname) => {
       if (err) throw err;
-      console.log('# Packed', tgzname);
-      fs.rename(path.join(depdir, tgzname), path.join(mdir, tgzname), err => {
+      console.log('# Packed', tgzname, 'in', process.cwd());
+      fs.rename(tgzname, path.join(mdir, tgzname), err => {
         if (err) throw err;
         console.log('# Created monorepo tarball', mdir, tgzname);
         package.dependencies[dep] = `file:npm-monorepo/${tgzname}`;
