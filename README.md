@@ -9,6 +9,13 @@ docker build --tag yolean/build-contract .
 docker run -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd)/:/source yolean/build-contract test
 ```
 
+Or for monorepo:
+```
+docker run -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd)/../:/source -w /source/$(basename $(pwd)) yolean/build-contract test
+```
+
+There are automated builds [solsson/build-contract](https://hub.docker.com/r/solsson/build-contract).
+
 ## Node.js monorepo support with `npm``
 
 Add scripts to `package.json` like so, and build contract will pick them up:
