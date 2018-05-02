@@ -119,3 +119,13 @@ mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
   next(monorepoDeps.shift());
 
 }))));
+
+process.on('uncaughtException', err => {
+  console.error('Uncaught exception', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (err, p) => {
+  console.error('Unhandled rejection', err);
+  process.exit(1);
+});
