@@ -1,19 +1,131 @@
-#!/bin/bash
-# At next scope creep please rewrite this with nodejs, as it'll only be used with nodejs environments anyway
-if [ -z ${MONOREPO_DEPS+x} ]; then
-  MONOREPO_DEPS=$(grep '"file:../' package.json | awk -F '"' '{ print $4 }')
-fi
-if [ ! -z "$MONOREPO_DEPS" ]; then
-  mkdir -p npm-monorepo
-  cp package.json package.json.monorepo-backup
-  for FILEDEP in $MONOREPO_DEPS; do
-    DEP=$(echo $FILEDEP | awk -F':' '{ print $2 }')
-    pushd $DEP
-    TARBALL=$(npm pack | tail -n 1)
-    popd
-    cp -v $DEP/$TARBALL npm-monorepo/
-    sed -i.bak "s|$DEP|./npm-monorepo/$TARBALL|" package.json
-  done
-  echo "  --- monorepo compatibility ---  "
-  git diff package.json
-fi
+#!/usr/bin/env node
+const path = require('path');
+const fs = require('fs');
+
+const npmLib = new Promise((resolve,reject) => {
+  // ls -la $(which npm), or we could do something like https://stackoverflow.com/a/25106648/113009
+  const guesses = ['./node_modules/npm', '/usr/local/lib/node_modules/npm', '/usr/lib/node_modules/npm'];
+  const check = (path) => path ? fs.stat(path, (err, stats) => {
+    if (err) return check(guesses.shift());
+    let installed = /^(?:\.\/)?node_modules\/(.*)/.exec(path);
+    if (installed) path = installed[1];
+    require(installed ? installed[1] : path).load((err, loaded) => {
+      if (err) throw err;
+      resolve(loaded);
+    });
+  }) : reject(new Error("Failed to guess the npm lib\'s install path. Try `npm (link|install) npm`."));
+  check(guesses.shift());
+});
+
+let dir = path.resolve('.');
+let mdir = path.join(dir, 'npm-monorepo');
+let cidir = path.join(mdir, 'ci');
+let cimdir = path.join(cidir, 'npm-monorepo');
+
+/**
+ * Gets a minimal package.json with only the stuff that should
+ * trigger an invalidation of docker build cache for the npm ci layer.
+ */
+function getCiPackage(packageJson) {
+  return {
+    name: packageJson.name,
+    version: packageJson.version,
+    dependencies: packageJson.dependencies
+  }
+}
+
+/**
+ * Produces a package tarball.
+ * @param modulePath In case we find a way to avoid depending on process.cwd
+ */
+function npmPackage(modulePath, cb) {
+  if (process.cwd() !== modulePath) throw new Error('npm expected to run in ' + modulePath + ', not ' + process.cwd());
+  npmLib.then(npm => {
+    npm.commands.pack([], (err, result) => {
+      if (err) return cb(err);
+      console.debug('# pack result', modulePath, JSON.stringify(result));
+      const name = result[0];
+      fs.stat(name, (err, stats) => {
+        if (err) console.error('# npm pack failed to produce the result file', npm, process.cwd());
+        cb(err, err ? undefined : name);
+      });
+    });
+  });
+}
+
+function stringifyPackageJson(package) {
+  return JSON.stringify(package, null, '  ');
+}
+
+let package = require(path.join(dir,'package.json'));
+let monorepoDeps = Object.keys(package.dependencies).filter(
+  dep => /^file:\.\.\//.test(package.dependencies[dep]));
+
+if (!monorepoDeps.length) {
+  console.log('# Zero monorepo dependencies found');
+  process.exit(0);
+}
+
+let mk = fs.mkdir;
+mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
+  if (err) {
+    if (err.code !== 'EEXIST') throw err;
+    console.log('# Monorepo dir structure already present', cimdir);
+  }
+
+  const completed = () => {
+    process.chdir(dir); // restore after npm
+    fs.unlink(path.join(cimdir, 'package.json'), err => err && console.error('Failed to clean up after sourceless tgz pack', err));
+    fs.writeFile(path.join(mdir, 'package.json'), stringifyPackageJson(package),
+      err => { if (err) throw err; });
+    const ciPackage = getCiPackage(package);
+    fs.writeFile(path.join(cidir, 'package.json'), stringifyPackageJson(ciPackage),
+      err => { if (err) throw err; });
+    fs.unlink(path.join(cimdir, '.npmignore'), err => err && console.error(err));
+  };
+
+  // Needed for the depCiPackage part in the callback stack below
+  fs.writeFile(path.join(cimdir, '.npmignore'), "*.tgz\n", err => err && console.error(err));
+
+  const next = dep => {
+    if (!dep) return completed();
+
+    let uri = package.dependencies[dep];
+    let urimatch = /^file:(\.\.\/.*)/.exec(uri);
+    if (!urimatch) return console.error('# Unrecognized monorepo dependency URI', uri);
+    let depdir = path.normalize(path.join(dir, urimatch[1]));
+
+    process.chdir(dir); process.chdir(depdir); // for npm
+    let depPackage = require(path.resolve('./package.json'));
+    npmPackage(depdir, (err, tgzname) => {
+      if (err) throw err;
+      console.log('# Packed', tgzname, 'in', process.cwd());
+      fs.rename(tgzname, path.join(mdir, tgzname), err => {
+        if (err) throw err;
+        console.log('# Created monorepo tarball', mdir, tgzname);
+        package.dependencies[dep] = `file:npm-monorepo/${tgzname}`;
+
+        let depCiPackage = getCiPackage(depPackage);
+        fs.writeFile(path.join(cimdir, 'package.json'), stringifyPackageJson(depCiPackage), err => {
+          process.chdir(cimdir); // for npm
+          npmPackage(cimdir, (err, tgzname) => {
+            console.log('# Created monorepo sourceless tarball for npm ci', cimdir, tgzname);
+            next(monorepoDeps.shift());
+          });
+        });
+      });
+    });
+  };
+  next(monorepoDeps.shift());
+
+}))));
+
+process.on('uncaughtException', err => {
+  console.error('Uncaught exception', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (err, p) => {
+  console.error('Unhandled rejection', err);
+  process.exit(1);
+});

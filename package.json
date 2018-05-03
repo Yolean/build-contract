@@ -1,12 +1,12 @@
 {
   "name": "build-contract",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Defines a successful build and test run for a microservice, from source to docker push",
   "main": "build-contract",
   "bin": {
     "build-contract": "./build-contract",
     "build-contract-predockerbuild": "./nodejs/build-contract-predockerbuild",
-    "build-contract-postdockerbuild": "./nodejs/build-contract-postdockerbuild"
+    "packagelock": "./nodejs/build-contract-packagelock"
   },
   "repository": {
     "type": "git",
@@ -20,5 +20,8 @@
   "homepage": "https://github.com/Yolean/build-contract#readme",
   "dependencies": {
     "yamljs": "0.2.8"
+  },
+  "peerDependencies": {
+    "npm": "5.8.0"
   }
 }

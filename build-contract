@@ -6,7 +6,7 @@ fi
 trap "exit" INT
 
 ROOT=$PWD
-DIR=`dirname $(readlink $BASH_SOURCE || echo $BASH_SOURCE)`
+DIR=`dirname $(realpath $0)`
 if [[ "$1" == "push" ]]; then
   DO_PUSH=true
 else
@@ -89,10 +89,6 @@ for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
 done
 
 echo "  --- build-contract: Build Contract finished. ---  "
-
-MONOREPO_POST=$(cat package.json | grep '"build-contract-postdockerbuild"' | awk -F '"' '{ print $4 }')
-if [[ "$MONOREPO_POST" == "#" ]]; then $DIR/nodejs/build-contract-postdockerbuild
-elif [[ ! -z "$MONOREPO_POST" ]]; then npm run build-contract-postdockerbuild; fi
 
 # Push targets
 for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
