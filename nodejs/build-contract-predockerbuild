@@ -106,9 +106,7 @@ mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
         package.dependencies[dep] = `file:npm-monorepo/${tgzname}`;
 
         let depCiPackage = getCiPackage(depPackage);
-        let depPpJson = path.join(cimdir, 'package.json');
-        fs.writeFile(depPpJson, stringifyPackageJson(depCiPackage), err => {
-          fs.utimesSync(depPpJson, 0, 0); // so we get consistent hashes for prod packages
+        fs.writeFile(path.join(cimdir, 'package.json'), stringifyPackageJson(depCiPackage), err => {
           process.chdir(cimdir); // for npm
           npmPackage(cimdir, (err, tgzname) => {
             console.log('# Created monorepo sourceless tarball for npm ci', cimdir, tgzname);
