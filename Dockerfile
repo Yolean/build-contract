@@ -28,6 +28,8 @@ COPY nodejs /usr/src/app/nodejs
 RUN cd /usr/src/app/ && npm install && npm link
 
 RUN adduser --disabled-password --gecos '' build-contract
+RUN usermod -aG root build-contract
+
 RUN chown -R build-contract /usr/src/app
 RUN chown -R build-contract /source
 
