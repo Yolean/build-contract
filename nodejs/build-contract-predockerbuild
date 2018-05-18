@@ -109,6 +109,12 @@ mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
           process.chdir(cimdir); // for npm
           npmPackage(cimdir, (err, tgzname) => {
             console.log('# Created monorepo sourceless tarball for npm ci', cimdir, tgzname);
+            console.log('------- debug info -------');
+            require('child_process').execSync('tar xvzf ' + tgzname, {stdio:[0,1,2]});
+            require('child_process').execSync('ls -la package/', {stdio:[0,1,2]});
+            require('child_process').execSync('shasum package/package.json', {stdio:[0,1,2]});
+            require('child_process').execSync('rm -rf package/', {stdio:[0,1,2]});
+            console.log('------- ---------- -------');
             next(monorepoDeps.shift());
           });
         });
