@@ -105,7 +105,10 @@ mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
         package.dependencies[dep] = `file:npm-monorepo/${tgzname}`;
 
         let depCiPackage = getCiPackage(depPackage);
-        fs.writeFile(path.join(cimdir, 'package.json'), stringifyPackageJson(depCiPackage), err => {
+        // We could probably speed things up here by using tar-stream, and maybe set permissions
+        let depPpJson = path.join(cimdir, 'package.json');
+        fs.writeFile(depPpJson, stringifyPackageJson(depCiPackage), err => {
+          fs.chownSync(depPpJson, 1000, 1000);
           process.chdir(cimdir); // for npm
           npmPackage(cimdir, (err, tgzname) => {
             console.log('# Created monorepo sourceless tarball for npm ci', cimdir, tgzname);
