@@ -43,8 +43,7 @@ function npmPackage(modulePath, cb) {
   npmLib.then(npm => {
     npm.commands.pack([], (err, result) => {
       if (err) return cb(err);
-      console.debug('# pack result', modulePath, JSON.stringify(result));
-      const name = result[0];
+      const name = result[0].filename;
       fs.stat(name, (err, stats) => {
         if (err) console.error('# npm pack failed to produce the result file', npm, process.cwd());
         cb(err, err ? undefined : name);
