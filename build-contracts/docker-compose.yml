@@ -1,12 +1,25 @@
 version: "2"
 services:
+  build-contract:
+    image: yolean/build-contract
+    build:
+      context: ../
+    labels:
+    - com.yolean.build-target
+
+  unittest:
+    build:
+      context: ../
+      dockerfile: ./build-contracts/unittest/Dockerfile
+    labels:
+    - com.yolean.build-contract
+
   nginx:
     image: nginx
+
   client:
     build: ./client
-    image: localhost:5000/build-contract-test/client:$PUSH_TAG
     environment:
       TEST_EXIT_CODE: $TEST_EXIT_CODE
     labels:
-      com.yolean.build-contract: ""
-      com.yolean.build-target: ""
+    - com.yolean.build-contract
