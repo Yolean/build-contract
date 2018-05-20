@@ -2,6 +2,8 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const zlib = require('zlib');
+const tar = require('tar-stream');
 
 const mnpm = require('./mnpm');
 
@@ -38,6 +40,56 @@ describe("writeProdPackageTgzWithDeterministicHash", () => {
     sha512.update(tgz);
     expect(sha512.digest('base64')).toBe('PWPbKiNEVWpu+1gyqpvy0uYpGnq7tJUBq4OxFzllDI+3AgZJcivUcP5k5BIOBG7lIxI3WUkBNA8cAVg/KUU4uw==');
     await fs.promises.unlink(filePath);
+  });
+
+  it("Entries are deterministic", done => {
+    const filePath = path.join(os.tmpdir(), 'build-contract-test-mnpm-' + Date.now() + '.tgz');
+    const packageJsonObject = {
+      "dependencies": {
+        "build-contract": "1.5.0"
+      }
+    };
+    mnpm.writeProdPackageTgzWithDeterministicHash({
+      packageJsonObject,
+      filePath
+    }).then(() => {
+      const extract = tar.extract();
+      let count = 0;
+
+      extract.on('entry', function(header, stream, next) {
+        count++;
+        expect(header.name).toBe('package/package.json');
+        expect(header.mode).toBe(parseInt('0644',8));
+        expect(header.uid).toBe(0);
+        expect(header.gid).toBe(0);
+        expect(header.size).toBe(mnpm.stringifyPackageJson(packageJsonObject).length);
+        expect(header.type).toBe('file');
+        expect(header.linkname).toBeNull();
+        expect(header.uname).toBe('');
+        expect(header.gname).toBe('');
+        expect(header.devmajor).toBe(0);
+        expect(header.devminor).toBe(0);
+        expect(Object.keys(header).length).toBe(12);
+
+        stream.on('end', function() {
+          // previous test asserted tgz checksum so we don't need to check content here
+          next();
+        })
+
+        stream.resume();
+      });
+
+      extract.on('finish', () => {
+        expect(count).toBe(1);
+        fs.promises.unlink(filePath).then(done);
+      });
+
+      fs.createReadStream(filePath)
+        .pipe(zlib.createGunzip({
+
+        }))
+        .pipe(extract);
+    });
   });
 
 });
