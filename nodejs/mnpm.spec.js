@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const zlib = require('zlib');
+const stream = require('stream');
 const tar = require('tar-stream');
 
 const mnpm = require('./mnpm');
@@ -12,6 +13,21 @@ describe("stringifyPackageJson", () => {
   it("Uses two whitespaces to indent (the Yolean convention) and adds a trailing newline", () => {
     const string = mnpm.stringifyPackageJson({name: 'test-module'});
     expect(string).toBe('{\n  "name": "test-module"\n}\n');
+  });
+
+});
+
+describe("Our choice of gzip function", () => {
+
+  it("Is platform independent wrt result checksum", () => {
+    const blob = new stream.PassThrough();
+    const sha256 = crypto.createHash('sha256');
+    const result = new stream.PassThrough();
+    result.on('data', d => sha256.update(d));
+    result.on('end', () => expect(sha256.digest('hex')).toBe(
+      'c5f9a2352dadba9488900ba6ede0133270e12350ffa6d6ebbdefef9ee6aa2238'));
+    blob.pipe(zlib.createGzip()).pipe(result);
+    blob.end('x\n');
   });
 
 });
