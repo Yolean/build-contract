@@ -26,8 +26,14 @@ describe("Our choice of gzip function", () => {
     result.on('data', d => sha256.update(d));
     result.on('end', () => expect(sha256.digest('hex')).toBe(
       'c5f9a2352dadba9488900ba6ede0133270e12350ffa6d6ebbdefef9ee6aa2238'));
+    // Note that this differs from `echo 'x' | gzip - | shasum -a 256 -`
     blob.pipe(zlib.createGzip()).pipe(result);
     blob.end('x\n');
+  });
+
+  // https://github.com/nodejs/node/issues/12244
+  it("Results may depend on zlib version", () => {
+    expect(process.versions.zlib).toBe('1.2.11');
   });
 
 });
