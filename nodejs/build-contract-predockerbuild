@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const path = require('path');
 const fs = require('fs');
+const mnpm = require('./mnpm');
 
 const npmLib = new Promise((resolve,reject) => {
   // ls -la $(which npm), or we could do something like https://stackoverflow.com/a/25106648/113009
@@ -52,10 +53,6 @@ function npmPackage(modulePath, cb) {
   });
 }
 
-function stringifyPackageJson(package) {
-  return JSON.stringify(package, null, '  ');
-}
-
 let package = require(path.join(dir,'package.json'));
 let monorepoDeps = Object.keys(package.dependencies).filter(
   dep => /^file:\.\.\//.test(package.dependencies[dep]));
@@ -75,10 +72,10 @@ mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
   const completed = () => {
     process.chdir(dir); // restore after npm
     fs.unlink(path.join(cimdir, 'package.json'), err => err && console.error('Failed to clean up after sourceless tgz pack', err));
-    fs.writeFile(path.join(mdir, 'package.json'), stringifyPackageJson(package),
+    fs.writeFile(path.join(mdir, 'package.json'), mnpm.stringifyPackageJson(package),
       err => { if (err) throw err; });
     const ciPackage = getCiPackage(package);
-    fs.writeFile(path.join(cidir, 'package.json'), stringifyPackageJson(ciPackage),
+    fs.writeFile(path.join(cidir, 'package.json'), mnpm.stringifyPackageJson(ciPackage),
       err => { if (err) throw err; });
     fs.unlink(path.join(cimdir, '.npmignore'), err => err && console.error(err));
   };
@@ -107,7 +104,7 @@ mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
         let depCiPackage = getCiPackage(depPackage);
         // We could probably speed things up here by using tar-stream, and maybe set permissions
         let depPpJson = path.join(cimdir, 'package.json');
-        fs.writeFile(depPpJson, stringifyPackageJson(depCiPackage), err => {
+        fs.writeFile(depPpJson, mnpm.stringifyPackageJson(depCiPackage), err => {
           fs.chownSync(depPpJson, 1000, 1000);
           process.chdir(cimdir); // for npm
           npmPackage(cimdir, (err, tgzname) => {
