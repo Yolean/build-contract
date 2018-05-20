@@ -36,6 +36,53 @@ describe("Our choice of gzip function", () => {
     expect(process.versions.zlib).toBe('1.2.11');
   });
 
+  it("Results may depend on zlib options", () => {
+    const options = {
+      windowBits: 14, memLevel: 7,
+      level: zlib.constants.Z_BEST_SPEED,
+      strategy: zlib.constants.Z_FIXED
+    };
+    const blob = new stream.PassThrough();
+    const sha256 = crypto.createHash('sha256');
+    const result = new stream.PassThrough();
+    result.on('data', d => sha256.update(d));
+    result.on('end', () => expect(sha256.digest('hex')).toBe(
+      '270b40b49af0dcc1de9631f231d022c93c07f29d2940e14d22ffdd797165e24f'));
+    // Note that this differs from `echo 'x' | gzip - | shasum -a 256 -`
+    blob.pipe(zlib.createGzip(options)).pipe(result);
+    blob.end('x\n');
+  });
+
+  it("Results may depend on zlib compression level", () => {
+    const options = {
+      level: zlib.constants.Z_BEST_COMPRESSION
+    };
+    const blob = new stream.PassThrough();
+    const sha256 = crypto.createHash('sha256');
+    const result = new stream.PassThrough();
+    result.on('data', d => sha256.update(d));
+    result.on('end', () => expect(sha256.digest('hex')).toBe(
+      '1437e4b499b5063c9530244d1655dba6986bcbd1258f81f122bdc4c983058ef4'));
+    // Note that this differs from `echo 'x' | gzip - | shasum -a 256 -`
+    blob.pipe(zlib.createGzip(options)).pipe(result);
+    blob.end('x\n');
+  });
+
+  it("Results may be more platform independent with no compression", () => {
+    const options = {
+      level: zlib.constants.Z_NO_COMPRESSION
+    };
+    const blob = new stream.PassThrough();
+    const sha256 = crypto.createHash('sha256');
+    const result = new stream.PassThrough();
+    result.on('data', d => sha256.update(d));
+    result.on('end', () => expect(sha256.digest('hex')).toBe(
+      '35932a249baf5fe47b9fecaa3482309e447ed8d9b01e207a6ce2846724006784'));
+    // Note that this differs from `echo 'x' | gzip - | shasum -a 256 -`
+    blob.pipe(zlib.createGzip(options)).pipe(result);
+    blob.end('x\n');
+  });
+
 });
 
 describe("writeProdPackageTgzWithDeterministicHash", () => {
