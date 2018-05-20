@@ -2,7 +2,7 @@ const fs = require('fs');
 const tar = require('tar-stream');
 const zlib = require('zlib');
 
-const tarContentMtime = new Date(946681200000);
+const tarContentMtime = new Date(946684800000);
 
 function stringifyPackageJson(packageJsonObject) {
   return JSON.stringify(packageJsonObject, null, '  ') + '\n';

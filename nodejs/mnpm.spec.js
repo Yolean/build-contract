@@ -35,10 +35,10 @@ describe("writeProdPackageTgzWithDeterministicHash", () => {
     const tgz = await fs.promises.readFile(filePath);
     const sha256 = crypto.createHash('sha256');
     sha256.update(tgz);
-    expect(sha256.digest('hex')).toBe('f9153d2eb9f6c5fce542c07540c60d30f819f8886c300d6e39fa1c272e90a2c0');
+    expect(sha256.digest('hex')).toBe('3be69fccaf4716df00adee93c219cfe44f1425aa968d33b6a3a4e725192586be');
     const sha512 = crypto.createHash('sha512');
     sha512.update(tgz);
-    expect(sha512.digest('base64')).toBe('PWPbKiNEVWpu+1gyqpvy0uYpGnq7tJUBq4OxFzllDI+3AgZJcivUcP5k5BIOBG7lIxI3WUkBNA8cAVg/KUU4uw==');
+    expect(sha512.digest('base64')).toBe('M24fZ1mSsZYX8dSCGSd54842GgAKd80xInWqNUhSZH1/hx7syKOOx05qMhD8avcFdXNnDMG/N2i/YZJFJNW6rQ==');
     await fs.promises.unlink(filePath);
   });
 
@@ -69,6 +69,8 @@ describe("writeProdPackageTgzWithDeterministicHash", () => {
         expect(header.gname).toBe('');
         expect(header.devmajor).toBe(0);
         expect(header.devminor).toBe(0);
+        expect(header.mtime).toBeInstanceOf(Date);
+        expect(header.mtime.getTime()).toBe(946684800000);
         expect(Object.keys(header).length).toBe(12);
 
         stream.on('end', function() {

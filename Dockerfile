@@ -27,8 +27,7 @@ COPY package.json /usr/src/app/
 RUN cd /usr/src/app/ && npm install --production
 COPY build-contract parsetargets /usr/src/app/
 COPY nodejs /usr/src/app/nodejs
-# This step seems to do an extra npm install, possibly with dev deps
-RUN cd /usr/src/app/ && npm link
+RUN cd /usr/src/app/ && npm link --only=production
 
 ENTRYPOINT ["build-contract"]
 CMD ["push"]
