@@ -25,6 +25,6 @@ WORKDIR /source
 
 COPY package.json build-contract parsetargets /usr/src/app/
 COPY nodejs /usr/src/app/nodejs
-RUN cd /usr/src/app/ && npm install && npm link
+RUN cd /usr/src/app/ && npm install --production && npm link
 ENTRYPOINT ["build-contract"]
 CMD ["push"]
