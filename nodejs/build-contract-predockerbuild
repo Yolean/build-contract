@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const path = require('path');
 const fs = require('fs');
+const mnpm = require('./mnpm');
 
 const npmLib = new Promise((resolve,reject) => {
   // ls -la $(which npm), or we could do something like https://stackoverflow.com/a/25106648/113009
@@ -43,18 +44,13 @@ function npmPackage(modulePath, cb) {
   npmLib.then(npm => {
     npm.commands.pack([], (err, result) => {
       if (err) return cb(err);
-      console.debug('# pack result', modulePath, JSON.stringify(result));
-      const name = result[0];
+      const name = result[0].filename;
       fs.stat(name, (err, stats) => {
         if (err) console.error('# npm pack failed to produce the result file', npm, process.cwd());
         cb(err, err ? undefined : name);
       });
     });
   });
-}
-
-function stringifyPackageJson(package) {
-  return JSON.stringify(package, null, '  ');
 }
 
 let package = require(path.join(dir,'package.json'));
@@ -76,10 +72,10 @@ mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
   const completed = () => {
     process.chdir(dir); // restore after npm
     fs.unlink(path.join(cimdir, 'package.json'), err => err && console.error('Failed to clean up after sourceless tgz pack', err));
-    fs.writeFile(path.join(mdir, 'package.json'), stringifyPackageJson(package),
+    fs.writeFile(path.join(mdir, 'package.json'), mnpm.stringifyPackageJson(package),
       err => { if (err) throw err; });
     const ciPackage = getCiPackage(package);
-    fs.writeFile(path.join(cidir, 'package.json'), stringifyPackageJson(ciPackage),
+    fs.writeFile(path.join(cidir, 'package.json'), mnpm.stringifyPackageJson(ciPackage),
       err => { if (err) throw err; });
     fs.unlink(path.join(cimdir, '.npmignore'), err => err && console.error(err));
   };
@@ -106,10 +102,21 @@ mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
         package.dependencies[dep] = `file:npm-monorepo/${tgzname}`;
 
         let depCiPackage = getCiPackage(depPackage);
-        fs.writeFile(path.join(cimdir, 'package.json'), stringifyPackageJson(depCiPackage), err => {
-          process.chdir(cimdir); // for npm
-          npmPackage(cimdir, (err, tgzname) => {
+        // We could probably speed things up here by using tar-stream, and maybe set permissions
+        let depPpJson = path.join(cimdir, 'package.json');
+        fs.writeFile(depPpJson, mnpm.stringifyPackageJson(depCiPackage), err => {
+          mnpm.writeProdPackageTgzWithDeterministicHash({
+            packageJsonObject: getCiPackage(depPackage),
+            filePath: path.join(cimdir, tgzname)
+          }).then(() => {
             console.log('# Created monorepo sourceless tarball for npm ci', cimdir, tgzname);
+            console.log('------- debug info -------');
+            process.chdir(cimdir); // for npm
+            require('child_process').execSync('tar xvzf ' + tgzname, {stdio:[0,1,2]});
+            require('child_process').execSync('ls -la package/', {stdio:[0,1,2]});
+            require('child_process').execSync('shasum package/package.json', {stdio:[0,1,2]});
+            require('child_process').execSync('rm -rf package/', {stdio:[0,1,2]});
+            console.log('------- ---------- -------');
             next(monorepoDeps.shift());
           });
         });
