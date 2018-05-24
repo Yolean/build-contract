@@ -74,6 +74,8 @@ for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
   # and volumes (including named volumes declared in the docker-compose.yml file)
   $docker_compose down -v
 
+  # build here fails when a build needs a depends_on to be built first, not pulled
+  # but up --build seems to work, see https://github.com/Yolean/build-contract/pull/13
   #$docker_compose build $BUILD_FLAGS
   $docker_compose up --build --force-recreate -d
   $docker_compose logs -f &
