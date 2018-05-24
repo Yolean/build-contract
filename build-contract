@@ -53,7 +53,7 @@ function wait_for_contract {
 }
 
 # Perform tests
-BUILD_FLAGS='';
+BUILD_FLAGS="$BUILD_FLAGS";
 if [[ $DO_PUSH == true ]]; then
   BUILD_FLAGS="$BUILD_FLAGS --pull";
 fi
