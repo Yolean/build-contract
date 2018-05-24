@@ -2,7 +2,7 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const zlib = require('zlib');
+const zlib = require('./zlib-choice');
 const stream = require('stream');
 const tar = require('tar-stream');
 
@@ -19,13 +19,14 @@ describe("stringifyPackageJson", () => {
 
 describe("Our choice of gzip function", () => {
 
-  it("Is platform independent wrt result checksum", () => {
+  it("Is platform independent wrt result checksum", done => {
     const blob = new stream.PassThrough();
     const sha256 = crypto.createHash('sha256');
     const result = new stream.PassThrough();
     result.on('data', d => sha256.update(d));
     result.on('end', () => expect(sha256.digest('hex')).toBe(
-      'c5f9a2352dadba9488900ba6ede0133270e12350ffa6d6ebbdefef9ee6aa2238'));
+      'b13627bbeee31ae666d6696cf11e411ee6b0e40d4b235cb2a02da32693ba2d3c'));
+    result.on('end', done);
     // Note that this differs from `echo 'x' | gzip - | shasum -a 256 -`
     blob.pipe(zlib.createGzip()).pipe(result);
     blob.end('x\n');
@@ -36,7 +37,7 @@ describe("Our choice of gzip function", () => {
     expect(process.versions.zlib).toBe('1.2.11');
   });
 
-  it("Results may depend on zlib options", () => {
+  it("Results may depend on zlib options", done => {
     const options = {
       windowBits: 14, memLevel: 7,
       level: zlib.constants.Z_BEST_SPEED,
@@ -47,13 +48,13 @@ describe("Our choice of gzip function", () => {
     const result = new stream.PassThrough();
     result.on('data', d => sha256.update(d));
     result.on('end', () => expect(sha256.digest('hex')).toBe(
-      '270b40b49af0dcc1de9631f231d022c93c07f29d2940e14d22ffdd797165e24f'));
-    // Note that this differs from `echo 'x' | gzip - | shasum -a 256 -`
+      'dd8dbe0ba323ab288d9e9272efc1f2bf52f495a812122c6ee9f9c5e7d765fda5'));
+    result.on('end', done);
     blob.pipe(zlib.createGzip(options)).pipe(result);
     blob.end('x\n');
   });
 
-  it("Results may depend on zlib compression level", () => {
+  it("Results may depend on zlib compression level", done => {
     const options = {
       level: zlib.constants.Z_BEST_COMPRESSION
     };
@@ -62,13 +63,13 @@ describe("Our choice of gzip function", () => {
     const result = new stream.PassThrough();
     result.on('data', d => sha256.update(d));
     result.on('end', () => expect(sha256.digest('hex')).toBe(
-      '1437e4b499b5063c9530244d1655dba6986bcbd1258f81f122bdc4c983058ef4'));
-    // Note that this differs from `echo 'x' | gzip - | shasum -a 256 -`
+      '6cda46810118792ed89f1e1662549186b5c851e4ce240be861780bc646e850c6'));
+    result.on('end', done);
     blob.pipe(zlib.createGzip(options)).pipe(result);
     blob.end('x\n');
   });
 
-  it("Results may be more platform independent with no compression", () => {
+  it("Results may be more platform independent with no compression", done => {
     const options = {
       level: zlib.constants.Z_NO_COMPRESSION
     };
@@ -77,9 +78,21 @@ describe("Our choice of gzip function", () => {
     const result = new stream.PassThrough();
     result.on('data', d => sha256.update(d));
     result.on('end', () => expect(sha256.digest('hex')).toBe(
-      '35932a249baf5fe47b9fecaa3482309e447ed8d9b01e207a6ce2846724006784'));
-    // Note that this differs from `echo 'x' | gzip - | shasum -a 256 -`
+      'f2b18200cd38c0d2c3dff4d3e2be9fd83069acd6b73cbc835c708fc3693c45d9'));
+    result.on('end', done);
     blob.pipe(zlib.createGzip(options)).pipe(result);
+    blob.end('x\n');
+  });
+
+  xit("Results may be better with inflate instead of gzip", done => {
+    const blob = new stream.PassThrough();
+    const sha256 = crypto.createHash('sha256');
+    const result = new stream.PassThrough();
+    result.on('data', d => sha256.update(d));
+    result.on('end', () => expect(sha256.digest('hex')).toBe(
+      'c5f9a2352dadba9488900ba6ede0133270e12350ffa6d6ebbdefef9ee6aa2238'));
+    result.on('end', done);
+    blob.pipe(zlib.createInflate()).pipe(result);
     blob.end('x\n');
   });
 
@@ -104,10 +117,10 @@ describe("writeProdPackageTgzWithDeterministicHash", () => {
     const tgz = await fs.promises.readFile(filePath);
     const sha256 = crypto.createHash('sha256');
     sha256.update(tgz);
-    expect(sha256.digest('hex')).toBe('3be69fccaf4716df00adee93c219cfe44f1425aa968d33b6a3a4e725192586be');
+    expect(sha256.digest('hex')).toBe('ebfa2ce786383196d29b927d3f0a51539655ebe56d4bac52b96f7e13749ba79c');
     const sha512 = crypto.createHash('sha512');
     sha512.update(tgz);
-    expect(sha512.digest('base64')).toBe('M24fZ1mSsZYX8dSCGSd54842GgAKd80xInWqNUhSZH1/hx7syKOOx05qMhD8avcFdXNnDMG/N2i/YZJFJNW6rQ==');
+    expect(sha512.digest('base64')).toBe('4aKJrQoeaGZuY8IDk/LmKX9drIVPoeQG00phQ7kZoR+SXHtrgeA19uUnBrclpm4Sm6xIv8/50V5u/dPxWg62Iw==');
     await fs.promises.unlink(filePath);
   });
 

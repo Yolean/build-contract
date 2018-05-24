@@ -26,6 +26,8 @@
     "node": ">=10.1.0"
   },
   "dependencies": {
+    "browserify-zlib": "0.2.0",
+    "pako": "1.0.6",
     "tar-stream": "1.6.1",
     "yamljs": "0.2.8"
   },
