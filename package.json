@@ -1,6 +1,6 @@
 {
   "name": "build-contract",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Defines a successful build and test run for a microservice, from source to docker push",
   "repository": {
     "type": "git",
