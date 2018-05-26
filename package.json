@@ -23,7 +23,7 @@
     "build-contract-predockerbuild": "./nodejs/build-contract-predockerbuild"
   },
   "engines": {
-    "node": ">=10.1.0"
+    "node": ">=10.2.1"
   },
   "dependencies": {
     "browserify-zlib": "0.2.0",
@@ -32,7 +32,7 @@
     "yamljs": "0.2.8"
   },
   "peerDependencies": {
-    "npm": "6.0.1"
+    "npm": "6.1.0"
   },
   "devDependencies": {
     "jest": "22.4.4"
