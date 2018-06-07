@@ -1,4 +1,4 @@
-FROM yolean/node@sha256:e591eac6f5d1f07876bd63bba2bbd1c1218521c5ed5312692851597b47089775
+FROM yolean/node@sha256:9d02ee07572e98ce3db9018ac6ee2a70b12464498d3ea36aca0e9d6fb660eba7
 
 WORKDIR /usr/src/app
 
