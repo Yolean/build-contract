@@ -18,7 +18,7 @@ Add `-t` for colors and Ctrl+C support.
 
 There are automated builds [solsson/build-contract](https://hub.docker.com/r/solsson/build-contract).
 
-## Node.js monorepo support with `npm``
+## Node.js monorepo support with `npm`
 
 Add scripts to `package.json` like so, and build contract will pick them up:
 
