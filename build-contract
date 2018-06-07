@@ -52,12 +52,6 @@ function wait_for_contract {
   fi
 }
 
-# Perform tests
-BUILD_FLAGS='';
-if [[ $DO_PUSH == true ]]; then
-  BUILD_FLAGS="$BUILD_FLAGS --pull";
-fi
-
 MONOREPO_PRE=$(cat package.json | grep '"build-contract-predockerbuild"' | awk -F '"' '{ print $4 }')
 if [[ "$MONOREPO_PRE" == "#" ]]; then $DIR/nodejs/build-contract-predockerbuild
 elif [[ ! -z "$MONOREPO_PRE" ]]; then npm run build-contract-predockerbuild; fi
@@ -74,8 +68,7 @@ for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
   # and volumes (including named volumes declared in the docker-compose.yml file)
   $docker_compose down -v
 
-  $docker_compose build $BUILD_FLAGS
-  $docker_compose up --force-recreate -d
+  $docker_compose up --build --force-recreate -d
   $docker_compose logs -f &
   bar=$(wait_for_contract $compose_name)
   echo "  --- build-contract: Build Contract finished with $bar"

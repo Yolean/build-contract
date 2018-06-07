@@ -1,6 +1,6 @@
 const fs = require('fs');
 const tar = require('tar-stream');
-const zlib = require('zlib');
+const zlib = require('./zlib-choice');
 
 const tarContentMtime = new Date(946684800000);
 
