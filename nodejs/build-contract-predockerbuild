@@ -57,11 +57,6 @@ let package = require(path.join(dir,'package.json'));
 let monorepoDeps = Object.keys(package.dependencies).filter(
   dep => /^file:\.\.\//.test(package.dependencies[dep]));
 
-if (!monorepoDeps.length) {
-  console.log('# Zero monorepo dependencies found');
-  process.exit(0);
-}
-
 let mk = fs.mkdir;
 mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
   if (err) {
@@ -71,7 +66,10 @@ mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
 
   const completed = () => {
     process.chdir(dir); // restore after npm
-    fs.unlink(path.join(cimdir, 'package.json'), err => err && console.error('Failed to clean up after sourceless tgz pack', err));
+    if (monorepoDeps.length) {
+      console.log('# Zero monorepo dependencies found');
+      fs.unlink(path.join(cimdir, 'package.json'), err => err && console.error('Failed to clean up after sourceless tgz pack', err));
+    }
     fs.writeFile(path.join(mdir, 'package.json'), mnpm.stringifyPackageJson(package),
       err => { if (err) throw err; });
     const ciPackage = getCiPackage(package);
