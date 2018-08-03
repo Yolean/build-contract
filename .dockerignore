@@ -3,3 +3,4 @@
 !package.json
 !parsetargets
 !nodejs
+!jest.config.js
