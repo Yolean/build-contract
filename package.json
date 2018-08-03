@@ -20,6 +20,7 @@
   },
   "scripts": {
     "unittest": "./node_modules/.bin/jest",
+    "test": "./build-contract",
     "build-contract-predockerbuild": "./nodejs/build-contract-predockerbuild"
   },
   "engines": {
