@@ -10,7 +10,7 @@ npm install --production --package-lock-only --ignore-scripts
 echo "------- packagelock details -------"
 cat ../../npm-monorepo/ci/package.json
 echo ""
-shasum -a 256 ../../npm-monorepo/ci/npm-monorepo/*
+shasum -a 256 ../../npm-monorepo/ci/npm-monorepo/* || echo "The module has no monorepo deps"
 echo "------- packagelock details -------"
 mv package-lock.json ../../
 cd ../../
