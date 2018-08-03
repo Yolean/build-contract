@@ -57,8 +57,7 @@ let package = require(path.join(dir,'package.json'));
 let monorepoDeps = Object.keys(package.dependencies).filter(
   dep => /^file:\.\.\//.test(package.dependencies[dep]));
 
-let mk = fs.mkdir;
-mk(dir, mk.bind(null, mdir, mk.bind(null, cidir, mk.bind(null, cimdir, err => {
+fs.mkdir(dir, err1 => fs.mkdir(mdir, err2 => fs.mkdir(cidir, err3 => fs.mkdir(cimdir, err => {
   if (err) {
     if (err.code !== 'EEXIST') throw err;
     console.log('# Monorepo dir structure already present', cimdir);
