@@ -1,4 +1,4 @@
-FROM yolean/node@sha256:751e8947b2ce0f416a3a69ed2413703b109754383a0eb1cefbf74b199233bf7c
+FROM yolean/node@sha256:83e18734c5cd0348e57ed023b3561091de472a6a4c347f9060db634264eae8e0
 
 ENV docker_version=17.09.1~ce-0~debian
 ENV compose_version=1.21.0 compose_sha256=af639f5e9ca229442c8738135b5015450d56e2c1ae07c0aaa93b7da9fe09c2b0
