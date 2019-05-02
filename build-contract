@@ -53,7 +53,7 @@ function wait_for_contract {
 }
 
 MONOREPO_PRE=$(cat package.json | grep '"build-contract-predockerbuild"' | awk -F '"' '{ print $4 }')
-if [[ "$MONOREPO_PRE" == "#" ]]; then $DIR/nodejs/build-contract-predockerbuild
+if [[ "$MONOREPO_PRE" == "#" ]]; then y-monorepo-build-prepare
 elif [[ ! -z "$MONOREPO_PRE" ]]; then npm run build-contract-predockerbuild; fi
 
 CONTRACTS_DIR="build-contracts/"
