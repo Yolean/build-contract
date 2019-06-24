@@ -1,33 +1,33 @@
-FROM yolean/node@sha256:83e18734c5cd0348e57ed023b3561091de472a6a4c347f9060db634264eae8e0
+FROM ubuntu:18.04@sha256:9b1702dcfe32c873a770a32cfd306dd7fc1c4fd134adfb783db68defc8894b3c
 
-ENV docker_version=17.09.1~ce-0~debian
-ENV compose_version=1.21.0 compose_sha256=af639f5e9ca229442c8738135b5015450d56e2c1ae07c0aaa93b7da9fe09c2b0
+RUN set -ex; \
+  export DEBIAN_FRONTEND=noninteractive; \
+  runDeps=''; \
+  buildDeps='curl ca-certificates'; \
+  apt-get update && apt-get install -y $runDeps $buildDeps --no-install-recommends; \
+  \
+  echo done
+#  \
+#  apt-get purge -y --auto-remove $buildDeps; \
+#  rm -rf /var/lib/apt/lists/*; \
+#  rm -rf /var/log/dpkg.log /var/log/alternatives.log /var/log/apt /etc/ssl/certs /root/.gnupg
 
-RUN apt-get update \
-  && apt-get install -y apt-transport-https curl ca-certificates gnupg2 \
-  && curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - \
-  && apt-key fingerprint 0EBFCD88 \
-  && echo "deb [arch=amd64] https://download.docker.com/linux/debian stretch stable" > /etc/apt/sources.list.d/docker.list \
-  && apt-get update \
-  && apt-get install -y docker-ce=$docker_version \
-  && rm -r /var/lib/apt/lists/*
+#https://github.com/docker/docker-install/raw/master/rootless-install.sh
 
-# This image expects a mounted docker.sock or env that points to docker tcp
-RUN update-rc.d -f docker remove
+RUN apt-get install -y --no-install-recommends kmod
 
-RUN curl -L https://github.com/docker/compose/releases/download/$compose_version/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose \
-  && sha256sum /usr/local/bin/docker-compose \
-  && echo "${compose_sha256} /usr/local/bin/docker-compose" | sha256sum -c - \
-  && chmod +x /usr/local/bin/docker-compose
+RUN set -e; \
+  apt-get install -y uidmap; \
+  apt-get install -y iptables; \
+  modprobe ip_tables;
 
-VOLUME /source
-WORKDIR /source
+RUN useradd -m -s /bin/sh -u 1000 -U dockerd
+USER dockerd
+WORKDIR /home/dockerd
 
-COPY package.json /usr/src/app/
-RUN cd /usr/src/app/ && npm install --production
-COPY build-contract parsetargets /usr/src/app/
-COPY nodejs /usr/src/app/nodejs
-RUN cd /usr/src/app/ && npm link --only=production
-
-ENTRYPOINT ["build-contract"]
-CMD ["push"]
+RUN set -ex; \
+  curl -sLS -o rootless-install.sh https://github.com/docker/docker-install/raw/e12ac635bd447fe2efc3724022a5dd1cb15d47a8/rootless-install.sh; \
+  sed -i 's|STATIC_RELEASE_URL=.*|STATIC_RELEASE_URL=https://download.docker.com/linux/static/test/x86_64/docker-19.03.0-rc3.tgz|' rootless-install.sh; \
+  sed -i 's|STATIC_RELEASE_ROOTLESS_URL=.*|STATIC_RELEASE_ROOTLESS_URL=https://download.docker.com/linux/static/test/x86_64/docker-rootless-extras-19.03.0-rc3.tgz|' rootless-install.sh; \
+  chmod u+x rootless-install.sh; \
+  ./rootless-install.sh
