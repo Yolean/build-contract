@@ -16,10 +16,10 @@ RUN set -ex; \
 
 RUN apt-get install -y --no-install-recommends kmod
 
-RUN set -e; \
-  apt-get install -y uidmap; \
-  apt-get install -y iptables; \
-  modprobe ip_tables;
+RUN apt-get install -y --no-install-recommends uidmap
+
+RUN echo "Default PATH=$PATH"
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/dockerd/bin
 
 RUN useradd -m -s /bin/sh -u 1000 -U dockerd
 USER dockerd
@@ -30,4 +30,10 @@ RUN set -ex; \
   sed -i 's|STATIC_RELEASE_URL=.*|STATIC_RELEASE_URL=https://download.docker.com/linux/static/test/x86_64/docker-19.03.0-rc3.tgz|' rootless-install.sh; \
   sed -i 's|STATIC_RELEASE_ROOTLESS_URL=.*|STATIC_RELEASE_ROOTLESS_URL=https://download.docker.com/linux/static/test/x86_64/docker-rootless-extras-19.03.0-rc3.tgz|' rootless-install.sh; \
   chmod u+x rootless-install.sh; \
-  ./rootless-install.sh
+  SKIP_IPTABLES=1 ./rootless-install.sh
+
+ENTRYPOINT [ "/home/dockerd/bin/dockerd-rootless.sh" \
+  "--experimental", \
+  "--iptables=false", \
+  "--storage-driver", "vfs" \
+  ]
