@@ -1,6 +1,6 @@
-FROM yolean/node@sha256:83e18734c5cd0348e57ed023b3561091de472a6a4c347f9060db634264eae8e0
+FROM yolean/node@sha256:a0141027783eb712197efe3ac1b42726da0da1c72ecafed99991ddf511086427
 
-ENV docker_version=17.09.1~ce-0~debian
+ENV docker_version=5:18.09.8~3-0~debian-stretch
 ENV compose_version=1.21.0 compose_sha256=af639f5e9ca229442c8738135b5015450d56e2c1ae07c0aaa93b7da9fe09c2b0
 
 RUN apt-get update \
