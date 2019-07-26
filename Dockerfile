@@ -9,7 +9,8 @@ RUN apt-get update \
   && apt-key fingerprint 0EBFCD88 \
   && echo "deb [arch=amd64] https://download.docker.com/linux/debian stretch stable" > /etc/apt/sources.list.d/docker.list \
   && apt-get update \
-  && apt-get install -y docker-ce=$docker_version \
+  && apt-cache madison docker-ce-cli \
+  && apt-get install -y docker-ce-cli=$docker_version \
   && rm -r /var/lib/apt/lists/*
 
 # This image expects a mounted docker.sock or env that points to docker tcp
