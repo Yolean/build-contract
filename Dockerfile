@@ -11,5 +11,7 @@ COPY build-contract parsetargets /usr/src/app/
 COPY nodejs /usr/src/app/nodejs
 RUN cd /usr/src/app/ && npm link --only=production
 
+RUN echo '#!/bin/sh' > /usr/local/bin/shasum && echo 'sha1sum $@' >> /usr/local/bin/shasum && chmod a+x /usr/local/bin/shasum
+
 ENTRYPOINT ["build-contract"]
 CMD ["push"]
