@@ -1,6 +1,6 @@
 FROM docker:19.03.2-dind@sha256:615eb3922630a30a52f7c46760f3d08a9eb4a1b0474d038281af8eade8c43f40
 
-RUN apk add --no-cache curl nodejs npm bash docker-compose
+RUN apk add --no-cache curl nodejs npm docker-compose bash git
 
 VOLUME /source
 WORKDIR /source
