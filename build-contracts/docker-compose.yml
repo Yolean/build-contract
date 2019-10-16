@@ -1,7 +1,7 @@
-version: "2"
+version: "2.1"
 services:
   build-contract:
-    image: yolean/build-contract
+    image: localhost:5000/yolean/build-contract:${PUSH_TAG:-dev}
     build:
       context: ../
     labels:
@@ -20,6 +20,6 @@ services:
   client:
     build: ./client
     environment:
-      TEST_EXIT_CODE: $TEST_EXIT_CODE
+      TEST_EXIT_CODE: ${TEST_EXIT_CODE:-0}
     labels:
     - com.yolean.build-contract
