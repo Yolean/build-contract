@@ -5,7 +5,8 @@ const fs = require('fs');
 const TARGET_LABEL = 'com.yolean.build-target';
 
 // Let's not push anything where we don't want it!
-const VALID_PUSH_RE = /^localhost/;
+const VALID_PUSH_RE = /^(localhost|[^\/]+\.local)/;
+
 // Matches two different approaches:
 // $REGISTRY_HOST/group/name:$PUSH_TAG
 // localhost:5000/group/name:$PUSH_TAG
