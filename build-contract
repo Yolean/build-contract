@@ -130,13 +130,6 @@ for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
       $docker_compose push $target | tee -a .buildcontract-push.out
       last=$(tail -n 1 .buildcontract-push.out && rm .buildcontract-push.out)
       handle_push_result $target "$last"
-
-      # TODO export the result
-# https://github.com/tektoncd/pipeline/blob/v0.7.0/docs/resources.md#surfacing-the-image-digest-built-in-a-task
-# https://github.com/tektoncd/pipeline/issues/216#issuecomment-541394947
-# https://github.com/tektoncd/pipeline/issues/1355 but we have PUSH_TAG
-# https://github.com/tektoncd/pipeline/issues/639#issuecomment-529917825
-# https://github.com/tektoncd/pipeline/pull/1237
     fi
   done
 done
