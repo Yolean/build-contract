@@ -52,6 +52,39 @@ function wait_for_contract {
   fi
 }
 
+# https://github.com/tektoncd/pipeline/blob/v0.7.0/docs/resources.md#surfacing-the-image-digest-built-in-a-tas
+function handle_push_result {
+  [ -d /builder/home ] || exit 0
+  target="$1"
+  resultline="$2"
+  output="/builder/home/image-outputs/$target"
+  mkdir -p -v $output
+  tag=$(echo "$resultline" | cut -d':' -f1)
+  digest=$(echo "$resultline" | cut -d' ' -f3)
+  size=$(echo "$resultline" | cut -d' ' -f5)
+  [ -z "$tag" ] && echo "Failed to find tag name in docker push result line: $resultline" && exit 1
+  [ -z "$digest" ] && echo "Failed to find digest in docker push result line: $resultline" && exit 1
+  [ -z "$size" ] && echo "Failed to find size in docker push result line: $resultline" && exit 1
+  cat <<EOF > $output/index.json
+{
+  "schemaVersion": 2,
+  "manifests": [
+    {
+      "mediaType": "application/vnd.oci.image.index.v1+json",
+      "size": $size,
+      "digest": "$digest",
+      "annotations": {
+        "org.opencontainers.image.ref.name": "$tag",
+        "com.yolean.build-target.name": "$target"
+      }
+    }
+  ]
+}
+EOF
+  echo "Wrote $output/index.json:"
+  cat $output/index.json
+}
+
 MONOREPO_PRE=$(cat package.json | grep '"build-contract-predockerbuild"' | awk -F '"' '{ print $4 }')
 if [[ "$MONOREPO_PRE" == "#" ]]; then $DIR/nodejs/build-contract-predockerbuild
 elif [[ ! -z "$MONOREPO_PRE" ]]; then npm run build-contract-predockerbuild; fi
@@ -94,7 +127,9 @@ for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
     echo "  --- build-contract: Found target \"$target\" ---  "
     if [[ $DO_PUSH == true ]]; then
       echo "  --- build-contract: Pushing target $target ---  "
-      $docker_compose push $target
+      $docker_compose push $target | tee -a .buildcontract-push.out
+      last=$(tail -n 1 .buildcontract-push.out && rm .buildcontract-push.out)
+      handle_push_result $target "$last"
     fi
   done
 done
