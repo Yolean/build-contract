@@ -6,6 +6,9 @@ services:
       context: ../
     labels:
     - com.yolean.build-target
+    # WIP scoped-down emulate skaffold run, but how do we get the full image names with digest?
+    - com.yoleln.build-setimage-resouce=deployment/example-v1-runner
+    - com.yoleln.build-setimage-container=runner
 
   unittest:
     build:
