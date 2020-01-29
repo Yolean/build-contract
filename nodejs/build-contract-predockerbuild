@@ -14,7 +14,7 @@ const npmLib = new Promise((resolve,reject) => {
       if (err) throw err;
       resolve(loaded);
     });
-  }) : reject(new Error("Failed to guess the npm lib\'s install path. Try `npm (link|install) npm`."));
+  }) : reject(new Error("Failed to guess the npm lib\'s install path. Try `npm (link|install) npm@^6.9.0`."));
   check(guesses.shift());
 });
 
