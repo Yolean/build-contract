@@ -22,7 +22,7 @@ GIT_COMMIT=$(git rev-parse --verify --short HEAD 2>/dev/null || echo '')
 if [[ ! -z "$GIT_COMMIT" ]]; then
   GIT_STATUS=$(git status --untracked-files=no --porcelain=v2)
   if [[ ! -z "$GIT_STATUS" ]]; then
-    GIT_COMMIT="$GIT_COMMIT-dev"
+    GIT_COMMIT="$GIT_COMMIT-dirty"
   fi
   echo "  --- build-contract: This is a git repo and GIT_COMMIT=$GIT_COMMIT ---  "
   export GIT_COMMIT
@@ -52,12 +52,12 @@ function wait_for_contract {
   fi
 }
 
-# https://github.com/tektoncd/pipeline/blob/v0.7.0/docs/resources.md#surfacing-the-image-digest-built-in-a-tas
+# https://github.com/tektoncd/pipeline/blob/v0.10.0/docs/resources.md#surfacing-the-image-digest-built-in-a-task
 function handle_push_result {
-  [ -d /builder/home ] || exit 0
+  [ -d /workspace/output ] || exit 0
   target="$1"
   resultline="$2"
-  output="/builder/home/image-outputs/$target"
+  output="/workspace/output/$target"
   mkdir -p -v $output
   tag=$(echo "$resultline" | cut -d':' -f1)
   digest=$(echo "$resultline" | cut -d' ' -f3)
