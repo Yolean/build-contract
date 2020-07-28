@@ -95,7 +95,7 @@ for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
   compose_name=${compose_name%%\.docker-compose}
   [[ ! -z "$PROJECT_NAME" ]] && compose_name="${PROJECT_NAME}_$compose_name"
   echo "  --- build-contract: $compose_name ($CONTRACTS_DIR$compose_file) ---  "
-  docker_compose="docker-compose -f $CONTRACTS_DIR$compose_file -p $compose_name"
+  docker_compose="docker-compose --no-ansi -f $CONTRACTS_DIR$compose_file -p $compose_name"
   echo "  --- build-contract: $docker_compose ---  "
 
   # Stops and removes containers, networks
@@ -121,7 +121,7 @@ echo "  --- build-contract: Build Contract finished. ---  "
 for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
   echo "  --- build-contract: $compose_file ---  "
   compose_file="$CONTRACTS_DIR$compose_file"
-  docker_compose="docker-compose -f $compose_file"
+  docker_compose="docker-compose --no-ansi -f $compose_file"
   targets="$(cat $compose_file | $DIR/parsetargets)"
   for target in $targets; do
     echo "  --- build-contract: Found target \"$target\" ---  "
