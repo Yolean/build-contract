@@ -1,6 +1,6 @@
 FROM docker:19.03.12-dind@sha256:97b189e06e3a9ea76ed51a852b7117a914241dfba09bfeed9779668ef3d106ed
 
-RUN apk add --no-cache curl nodejs npm bash git python2
+RUN apk add --no-cache curl nodejs npm bash git python3
 
 # https://github.com/docker/compose/issues/3465
 RUN apk add --no-cache --virtual .docker-compose-deps \
