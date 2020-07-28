@@ -4,7 +4,7 @@ RUN apk add --no-cache curl nodejs npm bash git python2
 
 # https://github.com/docker/compose/issues/3465
 RUN apk add --no-cache --virtual .docker-compose-deps \
-  py-pip python-dev libffi-dev openssl-dev gcc libc-dev make \
+  py-pip python3-dev libffi-dev openssl-dev gcc libc-dev make \
   && pip install docker-compose==1.25.5 \
   && apk del .docker-compose-deps
 
