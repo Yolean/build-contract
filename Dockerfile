@@ -1,11 +1,11 @@
-FROM docker:19.03.8-dind@sha256:ba51388db2907f0f0d33b365f039f89b48bfe9e3a408c2211addd5357268f33a
+FROM docker:19.03.12-dind@sha256:97b189e06e3a9ea76ed51a852b7117a914241dfba09bfeed9779668ef3d106ed
 
 RUN apk add --no-cache curl nodejs npm bash git python2
 
 # https://github.com/docker/compose/issues/3465
 RUN apk add --no-cache --virtual .docker-compose-deps \
   py-pip python-dev libffi-dev openssl-dev gcc libc-dev make \
-  && pip install docker-compose==1.25.4 \
+  && pip install docker-compose==1.25.5 \
   && apk del .docker-compose-deps
 
 VOLUME /source
