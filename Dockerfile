@@ -1,4 +1,4 @@
-FROM docker:19.03.12-dind@sha256:97b189e06e3a9ea76ed51a852b7117a914241dfba09bfeed9779668ef3d106ed
+FROM docker:20.10.2-dind@sha256:8f4e9ddda1049e6935f9fc7f5cad0bd1001fbf59188616f19b620fd7b6e95ba2
 
 RUN apk add --no-cache curl nodejs npm bash git
 
