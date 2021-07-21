@@ -1,6 +1,6 @@
 {
   "name": "build-contract",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "description": "Defines a successful build and test run for a microservice, from source to docker push",
   "repository": {
     "type": "git",
@@ -24,16 +24,16 @@
     "build-contract-predockerbuild": "./nodejs/build-contract-predockerbuild"
   },
   "engines": {
-    "node": ">=10.2.1"
+    "node": ">=16.5.0"
   },
   "dependencies": {
     "browserify-zlib": "0.2.0",
-    "npm": "6.9.2",
+    "npm": "6.14.13",
     "pako": "1.0.6",
     "tar-stream": "1.6.1",
     "yamljs": "0.2.8"
   },
   "devDependencies": {
-    "jest": "22.4.4"
+    "jest": "27.0.6"
   }
 }
