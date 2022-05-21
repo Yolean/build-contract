@@ -29,3 +29,16 @@ Add scripts to `package.json` like so, and build contract will pick them up:
 ```
 
 Paths depend on your npm install situation.
+
+# Build docker image
+
+```
+GIT_COMMIT=$(git rev-parse --verify HEAD 2>/dev/null || echo '')
+if [[ ! -z "$GIT_COMMIT" ]]; then
+  GIT_STATUS=$(git status --untracked-files=no --porcelain=v2)
+  if [[ ! -z "$GIT_STATUS" ]]; then
+    GIT_COMMIT="$GIT_COMMIT-dirty"
+  fi
+fi
+docker buildx build --progress=plain --platform=linux/amd64,linux/arm64/v8 -t yolean/build-contract:$GIT_COMMIT -f Dockerfile .
+```

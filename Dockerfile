@@ -1,9 +1,11 @@
-FROM docker:20.10.7-dind@sha256:4e1e22f471afc7ed5e024127396f56db392c1b6fc81fc0c05c0e072fb51909fe
+FROM --platform=$TARGETPLATFORM docker/compose:alpine-1.29.2@sha256:ae66070588c539b965986dc74e9371e3e62ef71668b72a5eed70de111ed3659e \
+  as compose
+
+FROM --platform=$TARGETPLATFORM docker:20.10.16-dind@sha256:d8b7b9468fe6dc26f008f6eadafa2845dc0408a3c5e86fc9e04f6bcc2d98bf13
 
 RUN apk add --no-cache curl nodejs npm bash git
 
-COPY --from=docker/compose:alpine-1.26.2@sha256:b60a020c0f68047b353a4a747f27f5e5ddb17116b7b018762edfb6f7a6439a82 \
-  /usr/local/bin/docker-compose /usr/local/bin/docker-compose
+COPY --link --from=compose /usr/local/bin/docker-compose /usr/local/bin/docker-compose
 
 VOLUME /source
 WORKDIR /source
