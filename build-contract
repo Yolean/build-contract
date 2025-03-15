@@ -57,14 +57,6 @@ function handle_push_result {
   [ -d /workspace/output ] || exit 0
   target="$1"
   resultline="$2"
-  if [[ "$resultline" =~ Pushing[[:space:]]+([^:]+:[^:]+):[[:space:]] ]]; then
-    image_reference="${BASH_REMATCH[1]}"
-    echo "Detected new docker-compose version push output, image: $image_reference"
-    docker push $image_reference | tee -a .buildcontract-push.out
-    last=$(tail -n 1 .buildcontract-push.out && rm .buildcontract-push.out)
-    handle_push_result $target "$last"
-    return 0
-  fi
   output="/workspace/output/$target"
   mkdir -p -v $output
   tag=$(echo "$resultline" | cut -d':' -f1)
@@ -137,6 +129,12 @@ for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
       echo "  --- build-contract: Pushing target $target ---  "
       $docker_compose push $target 2>&1 | tee -a .buildcontract-push.out
       last=$(tail -n 1 .buildcontract-push.out && rm .buildcontract-push.out)
+      if [[ "$last" =~ Pushing[[:space:]]+([^:]+:[^:]+):[[:space:]] ]]; then
+        image_push="${BASH_REMATCH[1]}"
+        echo "Detected new docker-compose version push output, image: $image_push"
+        docker push $image_push | tee -a .buildcontract-push.out
+        last=$(tail -n 1 .buildcontract-push.out && rm .buildcontract-push.out)
+      fi
       handle_push_result $target "$last"
     fi
   done
