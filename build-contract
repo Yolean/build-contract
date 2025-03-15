@@ -57,6 +57,14 @@ function handle_push_result {
   [ -d /workspace/output ] || exit 0
   target="$1"
   resultline="$2"
+  if [[ "$resultline" =~ Pushing[[:space:]]+([^:]+:[^:]+):[[:space:]] ]]; then
+    image_reference="${BASH_REMATCH[1]}"
+    echo "Detected new docker-compose version push output, image: $image_reference"
+    docker push $image_reference | tee -a .buildcontract-push.out
+    last=$(tail -n 1 .buildcontract-push.out && rm .buildcontract-push.out)
+    handle_push_result $target "$last"
+    return 0
+  fi
   output="/workspace/output/$target"
   mkdir -p -v $output
   tag=$(echo "$resultline" | cut -d':' -f1)
@@ -95,7 +103,7 @@ for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
   compose_name=${compose_name%%\.docker-compose}
   [[ ! -z "$PROJECT_NAME" ]] && compose_name="${PROJECT_NAME}_$compose_name"
   echo "  --- build-contract: $compose_name ($CONTRACTS_DIR$compose_file) ---  "
-  docker_compose="docker-compose --no-ansi -f $CONTRACTS_DIR$compose_file -p $compose_name"
+  docker_compose="docker-compose --ansi=never --progress=plain -f $CONTRACTS_DIR$compose_file -p $compose_name"
   echo "  --- build-contract: $docker_compose ---  "
 
   # Stops and removes containers, networks
@@ -121,13 +129,13 @@ echo "  --- build-contract: Build Contract finished. ---  "
 for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
   echo "  --- build-contract: $compose_file ---  "
   compose_file="$CONTRACTS_DIR$compose_file"
-  docker_compose="docker-compose --no-ansi -f $compose_file"
+  docker_compose="docker-compose --ansi=never --progress=plain -f $compose_file"
   targets="$(cat $compose_file | $DIR/parsetargets)"
   for target in $targets; do
     echo "  --- build-contract: Found target \"$target\" ---  "
     if [[ $DO_PUSH == true ]]; then
       echo "  --- build-contract: Pushing target $target ---  "
-      $docker_compose push $target | tee -a .buildcontract-push.out
+      $docker_compose push $target 2>&1 | tee -a .buildcontract-push.out
       last=$(tail -n 1 .buildcontract-push.out && rm .buildcontract-push.out)
       handle_push_result $target "$last"
     fi
