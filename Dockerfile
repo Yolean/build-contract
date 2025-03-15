@@ -1,4 +1,4 @@
-FROM --platform=$TARGETPLATFORM docker:20.10.16-dind@sha256:d8b7b9468fe6dc26f008f6eadafa2845dc0408a3c5e86fc9e04f6bcc2d98bf13
+FROM --platform=$TARGETPLATFORM docker:28.0.1-dind@sha256:ddf7f6fd0d2175709739f1d47e6134fa8eb055d2f61c11c3f99780c79b44578e
 
 RUN apk add --no-cache \
   docker-compose \
