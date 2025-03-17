@@ -131,7 +131,7 @@ for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
       last=$(tail -n 1 .buildcontract-push.out && rm .buildcontract-push.out)
       if [[ "$last" =~ Pushing[[:space:]]+([^:]+:[^:]+):[[:space:]] ]]; then
         image_push="${BASH_REMATCH[1]}"
-        echo "Detected new docker-compose version push output, image: $image_push"
+        echo "# Got docker-compose push output for $image_push, docker push to get digest and size"
         docker push $image_push | tee -a .buildcontract-push.out
         last=$(tail -n 1 .buildcontract-push.out && rm .buildcontract-push.out)
       fi
