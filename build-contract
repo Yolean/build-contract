@@ -86,8 +86,16 @@ EOF
 }
 
 MONOREPO_PRE=$(cat package.json | grep '"build-contract-predockerbuild"' | awk -F '"' '{ print $4 }')
-if [[ "$MONOREPO_PRE" == "#" ]]; then $DIR/nodejs/build-contract-predockerbuild
-elif [[ ! -z "$MONOREPO_PRE" ]]; then npm run build-contract-predockerbuild; fi
+MONOREPO_PRE_RUN="echo 'No predockerbuild command found'"
+if [[ "$MONOREPO_PRE" == "#" ]]; then MONOREPO_PRE_RUN="$DIR/nodejs/build-contract-predockerbuild"
+elif [[ ! -z "$MONOREPO_PRE" ]]; then MONOREPO_PRE_RUN="npm run build-contract-predockerbuild"; fi
+if [[ "$BUILD_CONTRACT_DRYRUN" == true ]]; then
+  echo "  --- build-contract: DRY RUN printing commands"
+  echo "$MONOREPO_PRE_RUN"
+else
+  echo "  --- build-contract: $MONOREPO_PRE_RUN ---  "
+  $MONOREPO_PRE_RUN
+fi
 
 CONTRACTS_DIR="build-contracts/"
 for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
@@ -98,7 +106,6 @@ for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
   docker_compose="docker-compose --ansi=never --progress=plain -f $CONTRACTS_DIR$compose_file -p $compose_name"
   echo "  --- build-contract: $docker_compose ---  "
   if [[ "$BUILD_CONTRACT_DRYRUN" == true ]]; then
-    echo "  --- build-contract: DRY RUN printing commands"
     docker_compose="echo $docker_compose"
   fi
 
