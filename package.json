@@ -24,7 +24,7 @@
     "build-contract-predockerbuild": "./nodejs/build-contract-predockerbuild"
   },
   "engines": {
-    "node": ">=16.5.0"
+    "node": ">=20.14.0"
   },
   "dependencies": {
     "browserify-zlib": "0.2.0",
