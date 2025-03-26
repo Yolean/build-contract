@@ -1,38 +1,67 @@
-#!/bin/bash
-set -e
-if [[ ! -z "$DEBUG" ]]; then
-  set -x
-fi
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
 trap "exit" INT
 
 ROOT=$PWD
 DIR=`dirname $(realpath $0)`
-if [[ "$1" == "push" ]]; then
-  DO_PUSH=true
-  shift 1
-else
-  DO_PUSH=false
+
+# Default values
+DO_PUSH=false
+BUILD_CONTRACT_DRYRUN=false
+BUILD_CONTRACT_GREP=""
+BUILD_CONTRACT_EXTRA=""
+
+# Help function
+function show_help {
+  echo "Usage: $0 [options]"
+  echo "Options:"
+  echo "  push                   Push images after build"
+  echo "  --dry-run              Print commands instead of executing them"
+  echo "  --grep PATTERN         Only run contracts matching PATTERN"
+  echo "  -f, --file FILE        Additional compose file to include"
+  echo "  -h, --help             Show this help message"
+  exit 0
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    push)
+      DO_PUSH=true
+      ;;
+    --dry-run)
+      BUILD_CONTRACT_DRYRUN=true
+      ;;
+    --grep)
+      shift
+      if [[ -z "$1" ]]; then
+        echo "  --- build-contract: No grep pattern provided ---  "
+        exit 1
+      fi
+      BUILD_CONTRACT_GREP="$1"
+      ;;
+    -f|--file)
+      shift
+      if [[ -z "$1" ]]; then
+        echo "  --- build-contract: No override file provided ---  "
+        exit 1
+      fi
+      BUILD_CONTRACT_EXTRA=" -f $1"
+      ;;
+    -h|--help)
+      show_help
+      ;;
+    *)
+      echo "Unknown option: $1"
+      show_help
+      ;;
+  esac
+  shift
+done
+
+if [[ "$DO_PUSH" == "false" ]]; then
   echo "  --- build-contract: Offline run (builds will not docker pull and image: will not be pushed) ---  "
-fi
-
-if [[ "$1" == "--grep" ]]; then
-  shift 1
-  BUILD_CONTRACT_GREP="$1"
-  if [[ "$BUILD_CONTRACT_GREP" == "" ]]; then
-    echo "  --- build-contract: No grep pattern provided ---  "
-    exit 1
-  fi
-  shift 1
-fi
-
-if [[ "$1" == "-f" ]]; then
-  shift 1
-  if [[ "$1" == "" ]]; then
-    echo "  --- build-contract: -f with no override provided ---  "
-    exit 1
-  fi
-  BUILD_CONTRACT_EXTRA=" -f $1"
-  shift 1
 fi
 
 [[ -z "$PROJECT_NAME" ]] && PROJECT_NAME=${ROOT##*/}
