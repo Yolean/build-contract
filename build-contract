@@ -9,9 +9,20 @@ ROOT=$PWD
 DIR=`dirname $(realpath $0)`
 if [[ "$1" == "push" ]]; then
   DO_PUSH=true
+  shift 1
 else
   DO_PUSH=false
   echo "  --- build-contract: Offline run (builds will not docker pull and image: will not be pushed) ---  "
+fi
+
+if [[ "$1" == "--grep" ]]; then
+  shift 1
+  BUILD_CONTRACT_GREP="$1"
+  if [[ "$BUILD_CONTRACT_GREP" == "" ]]; then
+    echo "  --- build-contract: No grep pattern provided ---  "
+    exit 1
+  fi
+  shift 1
 fi
 
 [[ -z "$PROJECT_NAME" ]] && PROJECT_NAME=${ROOT##*/}
@@ -99,6 +110,9 @@ fi
 
 CONTRACTS_DIR="build-contracts/"
 for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
+  if [[ -n "$BUILD_CONTRACT_GREP" && ! "$compose_file" == *"$BUILD_CONTRACT_GREP"* ]]; then
+    continue
+  fi
   compose_name=${compose_file%%\.yml}
   compose_name=${compose_name%%\.docker-compose}
   [[ ! -z "$PROJECT_NAME" ]] && compose_name="${PROJECT_NAME}_$compose_name"
@@ -133,6 +147,10 @@ echo "  --- build-contract: Build Contract finished. ---  "
 
 # Push targets
 for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
+  if [[ -n "$BUILD_CONTRACT_GREP" && ! "$compose_file" == *"$BUILD_CONTRACT_GREP"* ]]; then
+    echo "  --- build-contract: grep \"$BUILD_CONTRACT_GREP\" skips $compose_file"
+    continue
+  fi
   echo "  --- build-contract: $compose_file ---  "
   compose_file="$CONTRACTS_DIR$compose_file"
   docker_compose="docker-compose --ansi=never --progress=plain -f $compose_file"
