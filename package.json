@@ -24,11 +24,11 @@
     "build-contract-predockerbuild": "./nodejs/build-contract-predockerbuild"
   },
   "engines": {
-    "node": ">=16.5.0"
+    "node": ">=20.14.0"
   },
   "dependencies": {
     "browserify-zlib": "0.2.0",
-    "npm": "6.14.13",
+    "npm": "6.14.18",
     "pako": "1.0.6",
     "tar-stream": "1.6.1",
     "yamljs": "0.2.8"

@@ -1,16 +1,66 @@
-#!/bin/bash
-set -e
-if [[ ! -z "$DEBUG" ]]; then
-  set -x
-fi
+#!/usr/bin/env bash
+[ -z "$DEBUG" ] || set -x
+set -eo pipefail
 trap "exit" INT
 
 ROOT=$PWD
 DIR=`dirname $(realpath $0)`
-if [[ "$1" == "push" ]]; then
-  DO_PUSH=true
-else
-  DO_PUSH=false
+
+# Default values
+DO_PUSH=false
+BUILD_CONTRACT_DRYRUN=false
+BUILD_CONTRACT_GREP=""
+BUILD_CONTRACT_EXTRA=""
+
+# Help function
+function show_help {
+  echo "Usage: $0 [options]"
+  echo "Options:"
+  echo "  push                   Push images after build"
+  echo "  --dry-run              Print commands instead of executing them"
+  echo "  --grep PATTERN         Only run contracts matching PATTERN"
+  echo "  -f, --file FILE        Additional compose file to include"
+  echo "  -h, --help             Show this help message"
+  exit 0
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    push)
+      DO_PUSH=true
+      ;;
+    --dry-run)
+      BUILD_CONTRACT_DRYRUN=true
+      ;;
+    --grep)
+      shift
+      if [[ -z "$1" ]]; then
+        echo "  --- build-contract: No grep pattern provided ---  "
+        exit 1
+      fi
+      BUILD_CONTRACT_GREP="$1"
+      ;;
+    -f|--file)
+      shift
+      if [[ -z "$1" ]]; then
+        echo "  --- build-contract: No override file provided ---  "
+        exit 1
+      fi
+      BUILD_CONTRACT_EXTRA=" -f $1"
+      ;;
+    -h|--help)
+      show_help
+      ;;
+    *)
+      echo "Unknown option: $1"
+      show_help
+      ;;
+  esac
+  shift
+done
+
+if [[ "$DO_PUSH" == "false" ]]; then
   echo "  --- build-contract: Offline run (builds will not docker pull and image: will not be pushed) ---  "
 fi
 
@@ -86,17 +136,31 @@ EOF
 }
 
 MONOREPO_PRE=$(cat package.json | grep '"build-contract-predockerbuild"' | awk -F '"' '{ print $4 }')
-if [[ "$MONOREPO_PRE" == "#" ]]; then $DIR/nodejs/build-contract-predockerbuild
-elif [[ ! -z "$MONOREPO_PRE" ]]; then npm run build-contract-predockerbuild; fi
+MONOREPO_PRE_RUN="echo 'No predockerbuild command found'"
+if [[ "$MONOREPO_PRE" == "#" ]]; then MONOREPO_PRE_RUN="$DIR/nodejs/build-contract-predockerbuild"
+elif [[ ! -z "$MONOREPO_PRE" ]]; then MONOREPO_PRE_RUN="npm run build-contract-predockerbuild"; fi
+if [[ "$BUILD_CONTRACT_DRYRUN" == true ]]; then
+  echo "  --- build-contract: DRY RUN printing commands"
+  echo "$MONOREPO_PRE_RUN"
+else
+  echo "  --- build-contract: $MONOREPO_PRE_RUN ---  "
+  $MONOREPO_PRE_RUN
+fi
 
 CONTRACTS_DIR="build-contracts/"
 for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
+  if [[ -n "$BUILD_CONTRACT_GREP" && ! "$compose_file" == *"$BUILD_CONTRACT_GREP"* ]]; then
+    continue
+  fi
   compose_name=${compose_file%%\.yml}
   compose_name=${compose_name%%\.docker-compose}
   [[ ! -z "$PROJECT_NAME" ]] && compose_name="${PROJECT_NAME}_$compose_name"
   echo "  --- build-contract: $compose_name ($CONTRACTS_DIR$compose_file) ---  "
-  docker_compose="docker-compose --ansi=never --progress=plain -f $CONTRACTS_DIR$compose_file -p $compose_name"
+  docker_compose="docker-compose --ansi=never --progress=plain -f $CONTRACTS_DIR$compose_file$BUILD_CONTRACT_EXTRA -p $compose_name"
   echo "  --- build-contract: $docker_compose ---  "
+  if [[ "$BUILD_CONTRACT_DRYRUN" == true ]]; then
+    docker_compose="echo $docker_compose"
+  fi
 
   # Stops and removes containers, networks
   # and volumes (including named volumes declared in the docker-compose.yml file)
@@ -104,6 +168,9 @@ for compose_file in $(ls $CONTRACTS_DIR | grep .yml); do
 
   $docker_compose up --build --force-recreate -d
   $docker_compose logs -f &
+  if [[ "$BUILD_CONTRACT_DRYRUN" == true ]]; then
+    continue
+  fi
   bar=$(wait_for_contract $compose_name)
   echo "  --- build-contract: Build Contract finished with $bar"
   $docker_compose kill
@@ -119,9 +186,16 @@ echo "  --- build-contract: Build Contract finished. ---  "
 
 # Push targets
 for compose_file in $(ls "$CONTRACTS_DIR" | grep .yml); do
+  if [[ -n "$BUILD_CONTRACT_GREP" && ! "$compose_file" == *"$BUILD_CONTRACT_GREP"* ]]; then
+    echo "  --- build-contract: grep \"$BUILD_CONTRACT_GREP\" skips $compose_file"
+    continue
+  fi
   echo "  --- build-contract: $compose_file ---  "
   compose_file="$CONTRACTS_DIR$compose_file"
-  docker_compose="docker-compose --ansi=never --progress=plain -f $compose_file"
+  docker_compose="docker-compose --ansi=never --progress=plain -f $compose_file$BUILD_CONTRACT_EXTRA"
+  if [[ "$BUILD_CONTRACT_DRYRUN" == true ]]; then
+    docker_compose="echo $docker_compose"
+  fi
   targets="$(cat $compose_file | $DIR/parsetargets)"
   for target in $targets; do
     echo "  --- build-contract: Found target \"$target\" ---  "
