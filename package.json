@@ -34,6 +34,6 @@
     "yamljs": "0.2.8"
   },
   "devDependencies": {
-    "jest": "27.0.6"
+    "jest": "30.3.0"
   }
 }
