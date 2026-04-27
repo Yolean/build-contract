@@ -1,4 +1,4 @@
-FROM --platform=$TARGETPLATFORM docker:28.0.1-cli@sha256:18018c4b6e75bab6b93e04159c83778c98b60b0f95c762967bb501d684553daf
+FROM --platform=$TARGETPLATFORM docker:29.4.1-cli@sha256:17b5c235f40be7432a7c0914c154e9278aed63bad4afe5607e4f91840696a9f8
 
 RUN apk add --no-cache \
   docker-compose \
