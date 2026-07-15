@@ -21,3 +21,5 @@ RUN echo '#!/bin/sh' > /usr/local/bin/shasum && echo 'sha1sum $@' >> /usr/local/
 
 ENTRYPOINT ["build-contract"]
 CMD ["push"]
+
+RUN npm install -g --ignore-scripts pnpm@11.13.0
