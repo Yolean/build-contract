@@ -1,6 +1,6 @@
 FROM --platform=$TARGETPLATFORM docker:29.4.1-cli@sha256:17b5c235f40be7432a7c0914c154e9278aed63bad4afe5607e4f91840696a9f8
 
-RUN apk add --no-cache \
+RUN apk upgrade --no-cache && apk add --no-cache \
   docker-compose \
   curl \
   nodejs \
