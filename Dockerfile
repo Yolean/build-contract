@@ -22,4 +22,5 @@ RUN echo '#!/bin/sh' > /usr/local/bin/shasum && echo 'sha1sum $@' >> /usr/local/
 ENTRYPOINT ["build-contract"]
 CMD ["push"]
 
-RUN npm install -g --ignore-scripts pnpm@11.13.0
+# --ignore-scripts would leave the shebang-less placeholder pnpm 12 ships in place of its native binary
+RUN npm install -g --ignore-scripts pnpm@12.16.1 && node "$(npm root -g)/pnpm/install.js"
