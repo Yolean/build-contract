@@ -1,26 +1,27 @@
-FROM --platform=$TARGETPLATFORM docker:29.4.1-cli@sha256:17b5c235f40be7432a7c0914c154e9278aed63bad4afe5607e4f91840696a9f8
+FROM --platform=$TARGETPLATFORM docker:29.9.3-cli@sha256:4d742ab934c2149b628bf26369ac3ec51cb91e2e28fe6722a0e86a6d6efc4bd5 \
+  as docker
 
-RUN apk upgrade --no-cache && apk add --no-cache \
-  docker-compose \
-  curl \
-  nodejs \
-  npm \
-  bash \
-  git
+# Provides nodejs, npm, pnpm, git and curl, and is already pulled by the cicd pods that run build-contract
+FROM --platform=$TARGETPLATFORM ghcr.io/yolean/builder-base:092e54bdc2ee88d14efbec16c85613e353ebbd7c@sha256:1747e8e6f245d440b2c1ecd785c1e138c8582466ce1b6cd0d60b46fbbb695714
+
+USER root
+
+# Static binaries, independent of the base image's libc
+COPY --from=docker /usr/local/bin/docker /usr/local/bin/
+COPY --from=docker /usr/local/libexec/docker/cli-plugins /usr/local/libexec/docker/cli-plugins
+
+COPY package.json /usr/src/app/
+RUN cd /usr/src/app/ && npm install --omit=dev
+COPY build-contract parsetargets /usr/src/app/
+COPY nodejs /usr/src/app/nodejs
+RUN cd /usr/src/app/ && npm link --omit=dev
+
+RUN echo '#!/bin/sh' > /usr/local/bin/shasum && echo 'sha1sum $@' >> /usr/local/bin/shasum && chmod a+x /usr/local/bin/shasum
+
+USER nonroot:nogroup
 
 VOLUME /source
 WORKDIR /source
 
-COPY package.json /usr/src/app/
-RUN cd /usr/src/app/ && npm install --production
-COPY build-contract parsetargets /usr/src/app/
-COPY nodejs /usr/src/app/nodejs
-RUN cd /usr/src/app/ && npm link --only=production
-
-RUN echo '#!/bin/sh' > /usr/local/bin/shasum && echo 'sha1sum $@' >> /usr/local/bin/shasum && chmod a+x /usr/local/bin/shasum
-
 ENTRYPOINT ["build-contract"]
 CMD ["push"]
-
-# --ignore-scripts would leave the shebang-less placeholder pnpm 12 ships in place of its native binary
-RUN npm install -g --ignore-scripts pnpm@12.16.1 && node "$(npm root -g)/pnpm/install.js"
